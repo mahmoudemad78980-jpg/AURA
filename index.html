@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#06070d" />
+<meta name="description" content="مسرح الترددات المخفية — مسرح موسيقي تفاعلي يعمل بالكامل في المتصفح" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="مسرح الترددات" />
+<title>مسرح الترددات المخفية</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0e1e'/%3E%3Cpath d='M8 32c6-18 10 18 16 0s10 18 16 0 10 18 16 0' stroke='%238cf0ff' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+<style>
+/* ============================================================
+   1. المتغيرات والأساسيات
+   ============================================================ */
+:root{
+  --bg:#06070d;
+  --bg-2:#0a0d18;
+  --panel:rgba(18,22,38,.72);
+  --panel-solid:#101526;
+  --line:rgba(140,160,255,.14);
+  --line-strong:rgba(150,170,255,.28);
+  --txt:#e8ecff;
+  --txt-dim:#9aa4c8;
+  --txt-mute:#6d7699;
+  --accent:#7c5cff;
+  --accent-2:#56d6ff;
+  --accent-3:#ff79c6;
+  --accent-4:#ffd166;
+  --ok:#3ddc97;
+  --danger:#ff5c7a;
+  --radius:14px;
+  --radius-sm:10px;
+  --shadow:0 18px 50px rgba(0,0,0,.55);
+  --sidebar-w:320px;
+  --header-h:64px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:"Segoe UI",Tahoma,"Noto Kufi Arabic",system-ui,-apple-system,sans-serif;
+  background:var(--bg);
+  color:var(--txt);
+  overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select{font-family:inherit}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(140,160,255,.22);border-radius:9px}
+::-webkit-scrollbar-thumb:hover{background:rgba(140,160,255,.4)}
+
+/* ============================================================
+   2. الشريط العلوي
+   ============================================================ */
+.topbar{
+  position:fixed;inset-block-start:0;inset-inline:0;height:var(--header-h);
+  display:flex;align-items:center;gap:14px;
+  padding:0 16px;
+  background:linear-gradient(180deg,rgba(10,13,24,.94),rgba(10,13,24,.72));
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+  z-index:40;
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-mark{
+  width:38px;height:38px;border-radius:11px;flex:none;
+  background:radial-gradient(circle at 30% 25%,#3a2a7a,#101526 70%);
+  border:1px solid var(--line-strong);
+  display:grid;place-items:center;
+  box-shadow:0 0 22px rgba(124,92,255,.35), inset 0 0 18px rgba(86,214,255,.15);
+}
+.brand-mark svg{width:22px;height:22px;overflow:visible}
+.brand-txt{min-width:0}
+.brand-txt h1{
+  margin:0;font-size:16px;font-weight:700;letter-spacing:.2px;line-height:1.25;
+  background:linear-gradient(90deg,#fff,#9fd8ff 55%,#b8a4ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.brand-txt p{margin:2px 0 0;font-size:11px;color:var(--txt-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spacer{flex:1}
+.top-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  height:40px;padding:0 14px;border-radius:11px;
+  background:rgba(255,255,255,.045);
+  border:1px solid var(--line);
+  color:var(--txt);cursor:pointer;font-size:13px;font-weight:600;
+  transition:background .18s,border-color .18s,transform .12s,box-shadow .18s;
+  white-space:nowrap;
+}
+.top-btn:hover{background:rgba(255,255,255,.09);border-color:var(--line-strong)}
+.top-btn:active{transform:translateY(1px)}
+.top-btn svg{width:17px;height:17px;flex:none}
+.top-btn.icon-only{padding:0;width:40px;justify-content:center}
+.top-btn.install{
+  background:linear-gradient(135deg,var(--accent),#4f7cff);
+  border-color:transparent;color:#fff;
+  box-shadow:0 8px 22px rgba(124,92,255,.38);
+}
+.top-btn.install:hover{box-shadow:0 10px 28px rgba(124,92,255,.55)}
+.top-btn.install[hidden]{display:none}
+.top-btn.ghost-active{border-color:var(--accent-2);color:var(--accent-2)}
+
+/* ============================================================
+   3. الهيكل العام
+   ============================================================ */
+.layout{
+  position:fixed;inset-block-start:var(--header-h);inset-inline:0;inset-block-end:30px;
+  display:flex;z-index:20;
+}
+.stage-wrap{
+  position:relative;flex:1;min-width:0;overflow:hidden;
+  background:
+    radial-gradient(1200px 700px at 78% 12%,rgba(124,92,255,.16),transparent 62%),
+    radial-gradient(900px 620px at 12% 88%,rgba(86,214,255,.12),transparent 60%),
+    linear-gradient(160deg,#070912 0%,#06070d 55%,#080a14 100%);
+}
+#stage{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.stage-hint{
+  position:absolute;top:16px;right:16px;
+  display:flex;flex-wrap:nowrap;align-items:center;gap:8px;
+  max-width:calc(100% - 32px);overflow:hidden;
+  pointer-events:none;
+  justify-content:flex-end;
+}
+.chip{
+  align-self:flex-start;
+  font-size:11.5px;color:var(--txt-dim);
+  background:rgba(10,13,24,.6);border:1px solid var(--line);
+  padding:6px 11px;border-radius:999px;backdrop-filter:blur(8px);
+  white-space:nowrap;
+}
+.chip b{color:var(--accent-2);font-weight:700}
+kbd{
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;
+  background:rgba(255,255,255,.07);border:1px solid var(--line-strong);
+  border-block-end-width:2px;border-radius:5px;padding:1px 5px;color:var(--txt);
+}
+.stage-badge{
+  position:absolute;top:16px;left:16px;
+  display:flex;align-items:center;gap:8px;
+  font-size:11.5px;color:var(--txt-dim);
+  background:rgba(10,13,24,.6);border:1px solid var(--line);
+  padding:7px 12px;border-radius:999px;backdrop-filter:blur(8px);
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--txt-mute);flex:none}
+.live-dot.on{background:var(--ok);box-shadow:0 0 10px var(--ok);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+/* ============================================================
+   4. القائمة الجانبية
+   ============================================================ */
+.sidebar{
+  position:relative;width:var(--sidebar-w);flex:none;
+  background:var(--panel);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-left:1px solid var(--line);
+  display:flex;flex-direction:column;
+  transition:width .28s cubic-bezier(.4,0,.2,1),transform .28s cubic-bezier(.4,0,.2,1);
+  z-index:30;
+}
+.sidebar.collapsed{width:0;border-left-width:0}
+.sidebar.no-anim{transition:none}
+.sidebar.collapsed .sidebar-inner{opacity:0;transform:translateX(14px)}
+.sidebar-inner{
+  width:var(--sidebar-w);height:100%;overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;gap:2px;padding:16px 16px 26px;
+  transition:opacity .2s,transform .2s;
+}
+.sidebar-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-block-end:6px;padding-block-end:12px;border-bottom:1px solid var(--line);
+}
+.sidebar-head h2{margin:0;font-size:13px;font-weight:700;letter-spacing:.3px}
+.sidebar-head span{font-size:11px;color:var(--txt-mute)}
+/* مقبض السحب لتغيير العرض (على الحافة Inner المقابلة للمسرح) */
+.resizer{
+  position:absolute;top:0;bottom:0;left:0;width:9px;cursor:col-resize;z-index:5;
+  display:flex;align-items:center;justify-content:center;
+}
+.resizer::after{
+  content:"";width:3px;height:42px;border-radius:3px;
+  background:var(--line-strong);transition:background .18s;
+}
+.resizer:hover::after{background:var(--accent-2)}
+body.resizing{cursor:col-resize;user-select:none}
+
+.group{padding:14px 0;border-bottom:1px solid var(--line)}
+.group:last-child{border-bottom:none}
+.group-title{
+  display:flex;align-items:center;gap:8px;
+  font-size:11.5px;font-weight:700;color:var(--txt-mute);
+  letter-spacing:.6px;margin-block-end:11px;text-transform:uppercase;
+}
+.group-title svg{width:14px;height:14px;opacity:.8}
+.field{margin-block-end:12px}
+.field:last-child{margin-block-end:0}
+.field label{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;color:var(--txt-dim);margin-block-end:7px;
+}
+.field label b{color:var(--accent-2);font-weight:700;font-variant-numeric:tabular-nums}
+select{
+  width:100%;height:38px;padding:0 12px 0 32px;border-radius:var(--radius-sm);
+  background:rgba(8,11,22,.85);border:1px solid var(--line);
+  color:var(--txt);font-size:13px;cursor:pointer;outline:none;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%236d7699' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position:left 12px center;
+  background-repeat:no-repeat;
+}
+select:focus{border-color:var(--accent-2)}
+select option{background:var(--panel-solid);color:var(--txt)}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:5px;
+  background:linear-gradient(90deg,var(--accent) var(--p,50%),rgba(255,255,255,.1) var(--p,50%));
+  outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:#fff;border:3px solid var(--accent);cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.5);
+}
+input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;background:#fff;
+  border:3px solid var(--accent);cursor:pointer;
+}
+.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.seg button{
+  padding:9px 6px;border-radius:var(--radius-sm);cursor:pointer;
+  background:rgba(255,255,255,.04);border:1px solid var(--line);
+  color:var(--txt-dim);font-size:12px;font-weight:600;
+  transition:all .16s;display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.seg button small{font-size:9.5px;color:var(--txt-mute);font-weight:500}
+.seg button:hover{border-color:var(--line-strong);color:var(--txt)}
+.seg button.active{
+  background:linear-gradient(135deg,rgba(124,92,255,.3),rgba(86,214,255,.18));
+  border-color:var(--accent);color:#fff;
+  box-shadow:0 0 0 1px rgba(124,92,255,.3),0 6px 18px rgba(124,92,255,.2);
+}
+.seg button.active small{color:var(--accent-2)}
+.btn{
+  width:100%;height:42px;border-radius:var(--radius-sm);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  border:1px solid var(--line);background:rgba(255,255,255,.05);
+  color:var(--txt);font-size:13px;font-weight:700;transition:all .18s;
+}
+.btn:hover{background:rgba(255,255,255,.1);border-color:var(--line-strong)}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+.btn svg{width:16px;height:16px}
+.btn.primary{
+  background:linear-gradient(135deg,var(--accent),#4f7cff);border-color:transparent;color:#fff;
+  box-shadow:0 8px 22px rgba(124,92,255,.3);
+}
+.btn.primary:hover{box-shadow:0 10px 26px rgba(124,92,255,.45)}
+.btn.rec{
+  background:linear-gradient(135deg,#ff3d64,#c81e50);border-color:transparent;color:#fff;
+  box-shadow:0 8px 22px rgba(255,61,100,.3);
+}
+.btn.rec.recording{
+  background:linear-gradient(135deg,#ff8a3d,#ff3d64);
+  animation:recpulse 1.6s infinite;
+}
+@keyframes recpulse{50%{box-shadow:0 0 0 8px rgba(255,61,100,.12)}}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.timer{
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:20px;font-weight:700;
+  text-align:center;color:var(--txt-dim);font-variant-numeric:tabular-nums;
+  margin-block:2px 10px;
+}
+.timer.on{color:var(--accent-3)}
+.rec-dot{
+  width:9px;height:9px;border-radius:50%;background:#ff3d64;
+  animation:blink 1s steps(2) infinite;
+}
+@keyframes blink{50%{opacity:.15}}
+audio{
+  width:100%;height:38px;margin-block-end:9px;border-radius:var(--radius-sm);
+  background:rgba(0,0,0,.35);filter:invert(.92) hue-rotate(180deg);
+}
+.note{
+  font-size:11px;color:var(--txt-mute);line-height:1.7;
+  background:rgba(255,255,255,.03);border:1px solid var(--line);
+  padding:9px 11px;border-radius:var(--radius-sm);
+}
+.note b{color:var(--accent-2)}
+.kbd-list{display:flex;flex-wrap:wrap;gap:5px}
+
+/* ============================================================
+   5. نافذة التثبيت
+   ============================================================ */
+.modal{
+  position:fixed;inset:0;z-index:90;display:none;
+  place-items:center;padding:20px;background:rgba(3,5,12,.78);
+  backdrop-filter:blur(6px);
+}
+.modal.open{display:grid}
+.modal-card{
+  width:min(460px,100%);background:var(--panel-solid);
+  border:1px solid var(--line-strong);border-radius:18px;
+  padding:24px;box-shadow:var(--shadow);
+  animation:pop .22s cubic-bezier(.2,1.2,.4,1);
+}
+@keyframes pop{from{transform:scale(.94) translateY(10px);opacity:0}}
+.modal-card h3{margin:0 0 6px;font-size:17px}
+.modal-card>p{margin:0 0 16px;font-size:13px;color:var(--txt-dim);line-height:1.7}
+.modal-card ol{margin:0 0 18px;padding-inline-start:20px;font-size:13px;color:var(--txt-dim);line-height:2}
+.modal-card ol b{color:var(--txt)}
+.modal-actions{display:flex;gap:9px}
+.modal-actions .btn{flex:1}
+
+/* ============================================================
+   6. شريط الحالة
+   ============================================================ */
+.statusbar{
+  position:fixed;inset-block-end:0;inset-inline:0;height:30px;z-index:35;
+  display:flex;align-items:center;gap:16px;padding:0 16px;
+  font-size:11px;color:var(--txt-mute);
+  background:rgba(6,8,16,.92);border-top:1px solid var(--line);
+  backdrop-filter:blur(10px);
+}
+.statusbar .sb{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.statusbar .sb b{color:var(--txt-dim);font-weight:600}
+.statusbar .sb-end{margin-inline-start:auto}
+
+/* ============================================================
+   7. لوحة المفاتيح المرئية + بطاقات النغمات
+   ============================================================ */
+.stage-wrap{display:flex;flex-direction:column}
+.stage-wrap{display:flex;flex-direction:column}
+.canvas-area{position:relative;flex:1;min-height:0;overflow:hidden}
+
+/* نغمة طرف المسرح (يمين/يسار) */
+.edge-note{
+  position:absolute;bottom:12px;
+  display:flex;flex-direction:column;gap:2px;
+  padding:7px 12px;border-radius:12px;
+  background:rgba(10,13,24,.72);border:1px solid var(--line);
+  backdrop-filter:blur(10px);pointer-events:none;
+  font-size:10.5px;color:var(--txt-mute);line-height:1.5;
+}
+.edge-note b{font-size:13px;color:var(--txt);font-weight:700}
+.edge-note i{font-style:normal;color:var(--accent-2);font-variant-numeric:tabular-nums;font-size:11px}
+.edge-lo{left:16px}
+.edge-hi{right:16px;text-align:left}
+
+/* بطاقة النغمة التي يمر عليها المؤشر */
+.hover-note{
+  position:absolute;z-index:12;pointer-events:none;
+  padding:5px 10px;border-radius:9px;
+  background:rgba(8,11,22,.92);border:1px solid var(--line-strong);
+  font-size:11.5px;font-weight:700;color:var(--txt);
+  box-shadow:0 8px 22px rgba(0,0,0,.5);
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.hover-note b{color:var(--accent-2)}
+
+/* ---- زر «أضف صوتك» العائم ---- */
+.rec-dock{
+  position:absolute;top:56px;left:16px;z-index:14;
+  display:flex;flex-direction:column;align-items:flex-start;gap:8px;
+  pointer-events:none;
+}
+.rec-fab{
+  pointer-events:auto;
+  display:inline-flex;align-items:center;gap:9px;
+  height:42px;padding:0 18px;border-radius:999px;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),#4f7cff);
+  border:1px solid transparent;color:#fff;font-size:13px;font-weight:700;
+  box-shadow:0 10px 28px rgba(124,92,255,.42);
+  transition:transform .12s,box-shadow .2s,background .2s;
+}
+.rec-fab:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(124,92,255,.55)}
+.rec-fab:active{transform:translateY(0)}
+.rec-fab-dot{
+  width:9px;height:9px;border-radius:50%;background:#fff;flex:none;
+  box-shadow:0 0 0 0 rgba(255,255,255,.55);
+}
+.rec-fab.recording{
+  background:linear-gradient(135deg,#ff3d64,#c81e50);
+  box-shadow:0 10px 28px rgba(255,61,100,.45);
+}
+.rec-fab.recording .rec-fab-dot{background:#fff;animation:blink 1s steps(2) infinite}
+.rec-dock-info{
+  pointer-events:none;display:flex;align-items:center;gap:9px;
+  padding:7px 13px;border-radius:999px;
+  background:rgba(8,11,22,.82);border:1px solid var(--line);
+  backdrop-filter:blur(10px);font-size:11px;color:var(--txt-dim);
+  box-shadow:var(--shadow);
+}
+.rec-dock-timer{
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;
+  color:var(--accent-3);font-variant-numeric:tabular-nums;font-size:12.5px;
+}
+.rec-level{
+  width:74px;height:5px;border-radius:5px;overflow:hidden;
+  background:rgba(255,255,255,.12);flex:none;
+}
+.rec-level i{
+  display:block;height:100%;width:0%;border-radius:5px;
+  background:linear-gradient(90deg,var(--ok),var(--accent-4),var(--danger));
+  transition:width .07s linear;
+}
+/* توهج أحمر أثناء التسجيل */
+.rec-vignette{
+  position:absolute;inset:0;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 0 2px rgba(255,61,100,.55), inset 0 0 90px rgba(255,61,100,.18);
+  transition:opacity .3s;z-index:11;
+}
+.rec-vignette.on{opacity:1;animation:recvig 1.8s ease-in-out infinite}
+@keyframes recvig{50%{box-shadow:inset 0 0 0 2px rgba(255,61,100,.28), inset 0 0 110px rgba(255,61,100,.1)}}
+
+/* إشعار نجاح */
+.toast{
+  position:fixed;top:78px;left:50%;transform:translate(-50%,-14px);
+  z-index:95;padding:11px 18px;border-radius:12px;
+  background:rgba(12,16,30,.94);border:1px solid var(--line-strong);
+  box-shadow:var(--shadow);font-size:12.5px;color:var(--txt);
+  opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+  display:flex;align-items:center;gap:9px;max-width:90vw;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast b{color:var(--ok)}
+.toast .t-ico{font-size:15px}
+
+/* مربع اختيار + حجم الملف */
+.check{
+  display:flex;align-items:flex-start;gap:8px;margin-top:11px;
+  font-size:11.5px;color:var(--txt-dim);cursor:pointer;line-height:1.6;
+}
+.check input{
+  appearance:none;-webkit-appearance:none;width:16px;height:16px;flex:none;margin:1px 0 0;
+  border:1px solid var(--line-strong);border-radius:5px;background:rgba(8,11,22,.9);
+  cursor:pointer;position:relative;
+}
+.check input:checked{background:var(--accent);border-color:var(--accent)}
+.check input:checked::after{
+  content:"";position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath d='M5 13l4 4L19 7' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px no-repeat;
+}
+.file-meta{
+  font-size:11px;color:var(--txt-mute);margin-block-end:8px;
+  display:flex;align-items:center;gap:7px;
+}
+.file-meta b{color:var(--accent-2);font-weight:700}
+
+/* لوحة المفاتيح */
+.piano{
+  flex:none;height:190px;
+  background:linear-gradient(180deg,rgba(12,16,30,.92),rgba(8,10,20,.96));
+  border-top:1px solid var(--line);
+  display:flex;flex-direction:column;
+  transition:height .26s cubic-bezier(.4,0,.2,1);
+  z-index:15;
+}
+.piano.collapsed{height:38px}
+.piano.collapsed .keys{display:none}
+.piano-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 16px 5px;font-size:11.5px;color:var(--txt-mute);flex:none;
+}
+.piano-title{font-weight:600;letter-spacing:.3px}
+.piano-toggle{
+  background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--txt-dim);
+  font-size:11px;padding:3px 10px;border-radius:999px;cursor:pointer;transition:all .16s;
+}
+.piano-toggle:hover{color:var(--txt);border-color:var(--line-strong)}
+.keys{
+  flex:1;min-height:0;display:flex;direction:ltr;gap:6px;
+  padding:0 14px 14px;overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:thin;
+}
+/* لوحة المفاتيح QWERTY — ثلاثة صفوف */
+.keyboard{
+  flex:1;min-height:0;display:flex;flex-direction:column;gap:5px;
+  padding:0 14px 12px;overflow-x:auto;overflow-y:hidden;
+  direction:ltr;scrollbar-width:thin;
+}
+.kb-row{display:flex;gap:5px;min-width:max-content;justify-content:center}
+.kb-row.row-a{padding-left:15px}
+.kb-row.row-z{padding-left:30px}
+.pkey{
+  flex:0 0 auto;width:60px;height:46px;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  padding:4px 2px;border-radius:8px;
+  border:1px solid var(--line);border-top:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.015));
+  color:var(--txt);cursor:pointer;
+  transition:transform .1s,border-color .15s,box-shadow .15s,background .15s;
+}
+.pkey::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:hsl(var(--hue,265),85%,62%);
+  box-shadow:0 0 12px hsl(var(--hue,265),90%,60%,.7);
+}
+.pkey:hover{border-color:var(--line-strong);transform:translateY(-2px)}
+.pk-letter{
+  font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:15px;font-weight:800;line-height:1.05;
+  color:var(--txt);text-shadow:0 2px 10px rgba(0,0,0,.6);
+}
+.pk-note{font-size:10px;font-weight:700;color:var(--accent-2);line-height:1.15}
+.pk-hz{font-size:8.5px;color:var(--txt-mute);font-variant-numeric:tabular-nums;line-height:1.15}
+.pkey.sharp{background:linear-gradient(180deg,rgba(255,121,198,.13),rgba(124,92,255,.06))}
+.pkey.sharp .pk-note{color:var(--accent-3)}
+.pkey.sharp::before{background:hsl(var(--hue,300),88%,66%)}
+.pkey.on{
+  background:linear-gradient(135deg,var(--accent),#4f7cff);
+  border-color:transparent;transform:translateY(-3px);
+  box-shadow:0 10px 26px rgba(124,92,255,.45);
+}
+.pkey.on .pk-note,.pkey.on .pk-hz,.pkey.on .pk-letter{color:#fff}
+.pkey.on::before{background:#fff;box-shadow:0 0 16px rgba(255,255,255,.8)}
+
+/* ============================================================
+   8. الاستجابة للشاشات الصغيرة
+   ============================================================ */
+.scrim{
+  position:absolute;inset:0;background:rgba(3,5,12,.68);z-index:25;
+  opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px);
+}
+body.drawer-open .scrim{opacity:1;pointer-events:auto}
+
+@media (max-width:900px){
+  :root{--header-h:58px}
+  .sidebar{
+    position:absolute;top:0;bottom:0;right:0;left:auto;
+    width:var(--sidebar-w);max-width:88vw;
+    transform:translateX(100%);
+    box-shadow:-20px 0 60px rgba(0,0,0,.6);
+  }
+  body.drawer-open .sidebar{transform:translateX(0)}
+  .sidebar.collapsed{width:var(--sidebar-w);transform:translateX(100%)}
+  .sidebar.collapsed .sidebar-inner{opacity:1;transform:none}
+  .resizer{display:none}
+  .brand-txt p{display:none}
+  .top-btn span{display:none}
+  .statusbar{font-size:10px;gap:10px}
+  .statusbar .sb-hide{display:none}
+  .piano{height:168px}
+  .piano-head{padding:6px 12px 4px;font-size:10.5px}
+  .keyboard{gap:4px;padding:0 10px 10px}
+  .kb-row{gap:4px}
+  .kb-row.row-a{padding-left:11px}
+  .kb-row.row-z{padding-left:22px}
+  .pkey{width:52px;height:41px}
+  .pk-letter{font-size:13px}
+  .pk-note{font-size:9px}
+  .pk-hz{font-size:8px}
+  .edge-note{bottom:8px;padding:5px 9px;font-size:9.5px;gap:0}
+  .edge-note b{font-size:11.5px}
+  .edge-note i{font-size:10px}
+  .edge-lo{left:10px}
+  .edge-hi{right:10px}
+  .stage-hint{max-width:calc(100% - 32px);gap:6px}
+  .stage-hint .chip:nth-child(2),
+  .stage-hint .chip:nth-child(3){display:none}
+}
+@media (max-width:520px){
+  .brand-txt h1{font-size:13px}
+  .brand-mark{width:34px;height:34px}
+  .chip{font-size:10.5px;padding:5px 9px}
+  .top-btn.install{width:38px;padding:0;justify-content:center}
+  .top-btn.install span{display:none}
+  .statusbar{justify-content:space-between}
+  .rec-dock{top:52px;left:10px}
+  .rec-fab{height:38px;padding:0 14px;font-size:12px}
+  .rec-dock-info{gap:7px;padding:6px 11px;font-size:10px}
+  .rec-dock-hint{display:none}
+  .rec-level{width:56px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<!-- ======================= الشريط العلوي ======================= -->
+<header class="topbar">
+  <button class="top-btn icon-only" id="toggleSidebar" aria-label="إظهار/إخفاء القائمة الجانبية" title="القائمة الجانبية">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+  </button>
+
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8cf0ff" stroke-width="2" stroke-linecap="round">
+        <path d="M2 12c2.5-7 4 7 6.5 0S14 19 16.5 12 21 19 22 12"/>
+      </svg>
+    </div>
+    <div class="brand-txt">
+      <h1>مسرح الترددات المخفية</h1>
+      <p>Hidden Frequency Theater · مسرح صوتي تفاعلي</p>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+
+  <button class="top-btn install" id="installBtn" title="تثبيت التطبيق على جهازك">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v12M7 11l5 5 5-5M5 21h14"/>
+    </svg>
+    <span>تحميل التطبيق</span>
+  </button>
+</header>
+
+<!-- ======================= الهيكل ======================= -->
+<div class="layout">
+
+  <div class="scrim" id="scrim"></div>
+
+  <!-- القائمة الجانبية -->
+  <aside class="sidebar" id="sidebar">
+    <div class="resizer" id="resizer" title="اسحب لتغيير العرض"></div>
+    <div class="sidebar-inner">
+
+      <div class="sidebar-head">
+        <h2>لوحة التحكّم</h2>
+        <span>Control Room</span>
+      </div>
+
+      <!-- ---- الصوت ---- -->
+      <section class="group">
+        <div class="group-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 12h2M10 5v14M16 8v8M21 10v4"/>
+          </svg>
+         音色 الموجة الصوتية
+        </div>
+        <div class="seg" id="waveSeg">
+          <button data-wave="sine" class="active">Sine<small>ناعمة</small></button>
+          <button data-wave="triangle">Triangle<small>دافئة</small></button>
+          <button data-wave="sawtooth">Sawtooth<small>إلكترونية</small></button>
+          <button data-wave="square">Square<small>كلاسيكية</small></button>
+        </div>
+
+        <div class="field" style="margin-top:12px">
+          <label for="volume">مستوى الصوت العام <b id="volVal">70%</b></label>
+          <input type="range" id="volume" min="0" max="100" value="70" />
+        </div>
+
+        <div class="field">
+          <label for="echo">مقدار الصدى (Echo) <b id="echoVal">28%</b></label>
+          <input type="range" id="echo" min="0" max="80" value="28" />
+        </div>
+      </section>
+
+      <!-- ---- السلم ---- -->
+      <section class="group">
+        <div class="group-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 18V6M9 18v-7M14 18v-11M19 18V8"/>
+          </svg>
+          السلم الموسيقي
+        </div>
+        <div class="field">
+          <label for="scaleSel">السلّم المستخدم</label>
+          <select id="scaleSel">
+            <option value="pentatonic">الخماسي الهادئ (Pentatonic Minor)</option>
+            <option value="hijaz">المقام الشرقي / الحجاز (Hijaz)</option>
+            <option value="major">السلم الكبير (Major)</option>
+            <option value="harmonic">الصغير الهارموني (Harmonic Minor)</option>
+            <option value="dorian">الدوري (Dorian)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="rootSel">النغمة الجذرية</label>
+          <select id="rootSel">
+            <option value="130.81">دو (C3)</option>
+            <option value="146.83">ري (D3)</option>
+            <option value="164.81">مي (E3)</option>
+            <option value="174.61">فا (F3)</option>
+            <option value="196.00">صول (G3)</option>
+            <option value="220.00">لا (A3)</option>
+          </select>
+        </div>
+        <div class="note">
+          كل نغمة تُولَّد تلقائياً من السلّم المختار — مما يضمن التناغم مهما تفوّقت في العزف.
+        </div>
+      </section>
+
+      <!-- ---- اللوب ---- -->
+      <section class="group">
+        <div class="group-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/>
+          </svg>
+          اللوب الخلفي (Background Loop)
+        </div>
+        <div class="btn-row" style="margin-bottom:12px">
+          <button class="btn primary" id="loopBtn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <span id="loopBtnText">تشغيل اللوب</span>
+          </button>
+        </div>
+        <div class="field">
+          <label for="bpm">سرعة اللوب (BPM) <b id="bpmVal">92</b></label>
+          <input type="range" id="bpm" min="60" max="180" value="92" />
+        </div>
+        <div class="field">
+          <label for="loopVol">مستوى اللوب <b id="loopVolVal">35%</b></label>
+          <input type="range" id="loopVol" min="0" max="100" value="35" />
+        </div>
+        <div class="field">
+          <label for="loopPattern">نمط الإيقاع</label>
+          <select id="loopPattern">
+            <option value="ambient">تأملي هادئ (Ambient)</option>
+            <option value="pulse">نبضي (Pulse)</option>
+            <option value="wave">متموّج (Wave)</option>
+            <option value="heartbeat">نبضات (Heartbeat)</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- ---- التسجيل ---- -->
+      <section class="group">
+        <div class="group-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>
+          </svg>
+          استوديو التسجيل
+        </div>
+        <div class="timer" id="recTimer">00:00</div>
+        <button class="btn rec" id="recBtn">
+          <span class="rec-dot"></span>
+          <span id="recBtnText">بدء التسجيل</span>
+        </button>
+        <div class="field" style="margin-top:12px">
+          <label for="recQuality">حجم الملف</label>
+          <select id="recQuality">
+            <option value="48000">خفيف (48 kbps) — الأصغر حجماً</option>
+            <option value="96000">متوازن (96 kbps)</option>
+            <option value="128000">عالي الجودة (128 kbps)</option>
+          </select>
+        </div>
+        <label class="check">
+          <input type="checkbox" id="recAutoSave" checked />
+          <span>حفظ الملف تلقائياً على الجهاز بعد الإيقاف</span>
+        </label>
+        <div id="recOut" hidden style="margin-top:12px">
+          <div class="file-meta" id="recMeta">—</div>
+          <audio id="recPlayer" controls></audio>
+          <div class="btn-row">
+            <button class="btn" id="downloadBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12M7 11l5 5 5-5M5 21h14"/>
+              </svg>
+              تحميل المقطع
+            </button>
+            <button class="btn" id="discardBtn">حذف</button>
+          </div>
+        </div>
+        <div class="note" id="recExplanation" style="margin-top:11px">
+          يُدمج صوتك (الميكروفون) مع النغمات واللوب الموسيقي في <b>مقطع واحد</b> يُسجَّل ويُحفظ داخل جهازك.
+        </div>
+      </section>
+
+      <!-- ---- اختصارات ---- -->
+      <section class="group">
+        <div class="group-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
+          </svg>
+          العزف بالكيبورد
+        </div>
+        <div class="kbd-list" id="kbdList"></div>
+        <div class="note" style="margin-top:10px">
+          كل حرف من الـ26 حرفاً يعزف نغمة — اكتبه على الكيبورد أو انقره في لوحة النغمات أسفل المسرح لتسمع اسمه وتردده.
+          <br>الصف الوسطى هو السلّم الأساسي، والصف العلوي والسفلي أعلى وأخفض منه. مع <kbd>Shift</kbd> ترتفع النغمة أوكتافاً.
+        </div>
+      </section>
+
+    </div>
+  </aside>
+
+  <!-- المسرح -->
+  <main class="stage-wrap">
+    <div class="canvas-area">
+      <canvas id="stage"></canvas>
+      <div class="stage-badge">
+        <span class="live-dot" id="liveDot"></span>
+        <span id="statusText">جاهز للعزف</span>
+      </div>
+      <div class="stage-hint">
+        <span class="chip">🖱️ <b>اسحب</b> على المسرح للرسم بالنغمات</span>
+        <span class="chip">⌨️ <b>الكيبورد</b> يعزف أيضاً</span>
+        <span class="chip">🔊 <b>السرعة</b> تتحكم في شدة الصوت</span>
+      </div>
+      <!-- نغمتا طرفَي المسرح (اليمين واليسار) -->
+      <div class="edge-note edge-lo" id="edgeLo"></div>
+      <div class="edge-note edge-hi" id="edgeHi"></div>
+      <!-- بطاقة النغمة أسفل المؤشر -->
+      <div class="hover-note" id="hoverNote" hidden></div>
+
+      <!-- زر إضافة الصوت مع النغمة -->
+      <div class="rec-dock" id="recDock">
+        <button class="rec-fab" id="recFab" title="سجّل صوتك مع النغمات واحفظه كملف">
+          <span class="rec-fab-dot"></span>
+          <span id="recFabText">أضف صوتك</span>
+        </button>
+        <div class="rec-dock-info" id="recDockInfo" hidden>
+          <span class="rec-dock-timer" id="recDockTimer">00:00</span>
+          <div class="rec-level"><i id="recLevel"></i></div>
+          <span class="rec-dock-hint">جارٍ التسجيل… عزّف فوق النغمة</span>
+        </div>
+      </div>
+      <div class="rec-vignette" id="recVignette"></div>
+    </div>
+
+    <!-- لوحة المفاتيح المرئية: كل حرف ونغمته وتردده -->
+    <section class="piano" id="piano">
+      <div class="piano-head">
+        <span class="piano-title">🎹 لوحة النغمات — اكتب على الكيبورد أو انقر المفاتيح · كل حرف له نغمة وتردد</span>
+        <button class="piano-toggle" id="pianoToggle" title="إظهار / إخفاء اللوحة">طيّ ▾</button>
+      </div>
+      <div class="keyboard" id="keys"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ======================= شريط الحالة ======================= -->
+<footer class="statusbar">
+  <span class="sb">🎹 <b id="sbNote">—</b></span>
+  <span class="sb sb-hide">📶 <b id="sbFreq">—</b></span>
+  <span class="sb sb-end">🎭 مسرح الترددات المخفية <span class="sb-hide">· يعمل دون إنترنت</span></span>
+</footer>
+
+<!-- ======================= نافذة التثبيت ======================= -->
+<div class="modal" id="installModal">
+  <div class="modal-card">
+    <h3>تثبيت «مسرح الترددات المخفية»</h3>
+    <p id="installMsg">يمكنك تثبيت التطبيق على جهازك ليعمل كتطبيق مستقل دون إنترنت، تماماً مثل التطبيقات الأصلية.</p>
+    <ol id="installSteps">
+      <li>على <b>أندرويد / Chrome</b>: افتح قائمة المتصفح <b>⋮</b> ثم اختر <b>«تثبيت التطبيق»</b> أو <b>«إضافة إلى الشاشة الرئيسية»</b>.</li>
+      <li>على <b>iPhone / Safari</b>: اضغط زر <b>المشاركة</b> ثم <b>«إضافة إلى الشاشة الرئيسية»</b>.</li>
+      <li>على <b>كمبيوتر / Chrome أو Edge</b>: اضغط أيقونة التثبيت ⊕ في شريط العنوان، أو القائمة <b>⋮ → تثبيت</b>.</li>
+    </ol>
+    <div class="modal-actions">
+      <button class="btn primary" id="installModalOk">فهمت</button>
+      <button class="btn" id="installModalClose">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   مسرح الترددات المخفية — Hidden Frequency Theater
+   vanilla JS · Web Audio API · Canvas · MediaRecorder · PWA
+   ================================================================ */
+(() => {
+"use strict";
+
+/* ============================================================
+   القسم 1 — الحالة العامة والإعدادات
+   ============================================================ */
+const State = {
+  wave: "sine",
+  scale: "pentatonic",
+  root: 130.81,
+  volume: 0.70,
+  echo: 0.28,
+  bpm: 92,
+  loopVol: 0.35,
+  pattern: "ambient",
+  loopPlaying: false,
+  recording: false,
+  currentNote: null,
+  currentFreq: null,
+  installed: false,
+};
+
+const SCALES = {
+  pentatonic: { name: "الخماسي", steps: [0, 3, 5, 7, 10] },
+  hijaz:      { name: "الحجاز",   steps: [0, 1, 4, 5, 7, 8, 10] },
+  major:      { name: "الكبير",   steps: [0, 2, 4, 5, 7, 9, 11] },
+  harmonic:   { name: "الهارموني",steps: [0, 2, 3, 5, 7, 8, 11] },
+  dorian:     { name: "الدوري",   steps: [0, 2, 3, 5, 7, 9, 10] },
+};
+
+const NOTE_NAMES = ["دو","دو#","ري","ري#","مي","فا","فا#","صول","صول#","لا","لا#","سي"];
+
+/* ============================================================
+   القسم 2 — محرّك الصوت (Web Audio API)
+   ============================================================ */
+const Audio_ = {
+  ctx: null,
+  master: null,
+  analyser: null,
+  echoSend: null,
+  delay: null,
+  feedback: null,
+  wet: null,
+  loopBus: null,
+  recDest: null,
+  data: null,
+  active: 0,
+
+  init() {
+    if (this.ctx) return this.ctx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    const ctx = new AC();
+    this.ctx = ctx;
+
+    // المسار الرئيسي: master -> analyser -> destination
+    this.master = ctx.createGain();
+    this.master.gain.value = State.volume;
+
+    this.analyser = ctx.createAnalyser();
+    this.analyser.fftSize = 1024;
+    this.analyser.smoothingTimeConstant = 0.82;
+
+    this.master.connect(this.analyser);
+    this.analyser.connect(ctx.destination);
+
+    // مسار الصدى (Delay + Feedback)
+    this.delay = ctx.createDelay(2.0);
+    this.delay.delayTime.value = 0.36;
+    this.feedback = ctx.createGain();
+    this.feedback.gain.value = 0.42;
+    this.wet = ctx.createGain();
+    this.wet.gain.value = State.echo;
+    this.echoSend = ctx.createGain();
+    this.echoSend.gain.value = 1;
+
+    this.echoSend.connect(this.delay);
+    this.delay.connect(this.feedback);
+    this.feedback.connect(this.delay);
+    this.delay.connect(this.wet);
+    this.wet.connect(this.master);
+
+    // مسار اللوب (مستقل عن مستوى العزف)
+    this.loopBus = ctx.createGain();
+    this.loopBus.gain.value = State.loopVol;
+    this.loopBus.connect(this.master);
+
+    // وجهة تسجيل MediaStream (تستقبل الصوت + الميكروفون)
+    if (ctx.createMediaStreamDestination) {
+      this.recDest = ctx.createMediaStreamDestination();
+    }
+
+    // محلل طيفي بصري
+    this.data = new Uint8Array(this.analyser.frequencyBinCount);
+    return ctx;
+  },
+
+  resume() {
+    if (!this.ctx) this.init();
+    if (this.ctx && this.ctx.state === "suspended") this.ctx.resume();
+  },
+
+  // تشغيل نغمة واحدة مع غلاف صوتي
+  tone(freq, opts = {}) {
+    if (!this.ctx) return null;
+    const {
+      wave = State.wave, dur = 0.9, gain = 0.3, when = 0,
+      toBus = null, attack = 0.008, detune = 0, filter = null, count = false
+    } = opts;
+
+    // حدّ أقصى للأصوات المتزامنة (نغمات العزف) للحماية من إغراق المعالج
+    if (count && this.active > 26) return null;
+
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + when;
+    const osc = ctx.createOscillator();
+    osc.type = wave;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (detune) osc.detune.setValueAtTime(detune, t0);
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), t0 + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    let node = osc;
+    if (filter) {
+      const flt = ctx.createBiquadFilter();
+      flt.type = "lowpass";
+      flt.frequency.setValueAtTime(filter, t0);
+      flt.frequency.exponentialRampToValueAtTime(Math.max(220, filter * 0.35), t0 + dur);
+      osc.connect(flt);
+      node = flt;
+    }
+    node.connect(g);
+    g.connect(toBus || this.master);
+    g.connect(this.echoSend);
+
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+    if (count) {
+      this.active++;
+      osc.onended = () => { this.active = Math.max(0, this.active - 1); };
+    }
+    return { osc, gain: g, stop: (t) => {
+      try {
+        const now = t || ctx.currentTime;
+        g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(Math.max(0.0002, g.gain.value), now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+        osc.stop(now + 0.16);
+      } catch (e) { /* تم الإيقاف مسبقًا */ }
+    }};
+  },
+
+  // ضربة إيقاعية (Hi-hat) من ضوضاء
+  hat(when = 0, gain = 0.12) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + when;
+    const len = Math.floor(ctx.sampleRate * 0.06);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const hp = ctx.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 6500;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(hp); hp.connect(g); g.connect(this.loopBus);
+    src.start(t0);
+  },
+
+  // نبضة منخفضة (Kick / Pulse)
+  kick(when = 0, gain = 0.3, freq = 78) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + when;
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq * 2.2, t0);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.6, t0 + 0.13);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+    osc.connect(g); g.connect(this.loopBus);
+    osc.start(t0); osc.stop(t0 + 0.4);
+  },
+};
+
+/* ============================================================
+   القسم 3 — حساب الترددات من السلّم
+   ============================================================ */
+const Scale = {
+  // درجة عشرية (قد تكون كسرية) -> تردد
+  freqAt(degree) {
+    const steps = SCALES[State.scale].steps;
+    const n = steps.length;
+    const oct = Math.floor(degree / n);
+    const idx = ((Math.floor(degree) % n) + n) % n;
+    const semi = steps[idx] + 12 * oct;
+    return State.root * Math.pow(2, semi / 12);
+  },
+  // تردد -> اسم النغمة
+  nameOf(freq) {
+    if (!freq) return "—";
+    const semis = Math.round(12 * Math.log2(freq / 261.63));
+    const oct = Math.floor(semis / 12);
+    const pc = ((semis % 12) + 12) % 12;
+    return `${NOTE_NAMES[pc]}${oct + 4}`;
+  },
+};
+
+/* ============================================================
+   القسم 4 — مسرح الرسم (Canvas)
+   ============================================================ */
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");
+let W = 0, H = 0, DPR = 1;
+
+const ripples = [];   // الحلقات المولّدة من النغمات
+const particles = []; // جزيئات متناثرة
+const beams = [];     // خطوط تربط النغمات المتتالية
+let trail = [];       // مسار المؤشر
+let lastPoint = null;
+let hueBase = 265;
+
+function resizeCanvas() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.getBoundingClientRect();
+  W = Math.max(1, rect.width);
+  H = Math.max(1, rect.height);
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+function hueForFreq(freq) {
+  const semis = 12 * Math.log2(freq / State.root);
+  return (hueBase + semis * 9) % 360;
+}
+
+function spawnRipple(x, y, freq, strength = 1) {
+  const sides = 3 + Math.floor(Math.random() * 4); // مثلث/مربّع/خماسي/سداسي
+  ripples.push({
+    x, y, freq, r: 6, max: 120 + strength * 165, life: 1,
+    hue: hueForFreq(freq), strength, sides,
+    spin: (Math.random() - 0.5) * 0.012,
+    angle: Math.random() * Math.PI * 2,
+  });
+  const count = Math.round(6 + strength * 12);
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = (0.6 + Math.random() * 2.6) * strength;
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      r: 1.2 + Math.random() * 2.4,
+      life: 1, hue: (hueForFreq(freq) + (Math.random() * 40 - 20) + 360) % 360,
+    });
+  }
+}
+
+function spawnBeam(a, b) {
+  if (!a || !b) return;
+  beams.push({ a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y }, life: 1, hue: a.hue ?? hueBase });
+}
+
+function draw() {
+  requestAnimationFrame(draw);
+  ctx.clearRect(0, 0, W, H);
+
+  // توهج خلفي يتفاعل مع الصوت
+  let energy = 0;
+  if (Audio_.analyser && Audio_.data) {
+    Audio_.analyser.getByteFrequencyData(Audio_.data);
+    let sum = 0;
+    for (let i = 0; i < 90; i++) sum += Audio_.data[i];
+    energy = sum / (90 * 255);
+  }
+  if (energy > 0.02) {
+    const g = ctx.createRadialGradient(W * 0.5, H * 0.55, 0, W * 0.5, H * 0.55, Math.max(W, H) * 0.55);
+    g.addColorStop(0, `rgba(124,92,255,${0.05 + energy * 0.22})`);
+    g.addColorStop(1, "rgba(124,92,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // شبكة خافتة
+  ctx.strokeStyle = "rgba(140,160,255,.045)";
+  ctx.lineWidth = 1;
+  const step = 62;
+  ctx.beginPath();
+  for (let x = 0; x < W; x += step) { ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); }
+  for (let y = 0; y < H; y += step) { ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); }
+  ctx.stroke();
+
+  // موجات خلفية خافتة عندما يكون المسرح هادئاً (تمنح إحساساً بالحياة)
+  if (ripples.length < 3 && energy < 0.05) {
+    const t = performance.now() * 0.0004;
+    for (let l = 0; l < 3; l++) {
+      ctx.beginPath();
+      const baseY = H * (0.34 + l * 0.16);
+      const amp = 16 + l * 7;
+      for (let x = 0; x <= W; x += 12) {
+        const y = baseY + Math.sin(x * 0.006 + t * (1 + l * 0.35) + l) * amp;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = `hsla(${260 + l * 26},80%,66%,${0.075 - l * 0.017})`;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+  }
+
+  // الحلقات
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
+    r.r += (r.max - r.r) * 0.045 + 0.7;
+    r.life -= 0.011;
+    r.angle += r.spin;
+    if (r.life <= 0 || r.r > r.max) { ripples.splice(i, 1); continue; }
+    const a = Math.max(0, r.life) * 0.44;
+    const wob = 1 + Math.sin(r.r * 0.05) * 0.03;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r * wob, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(${r.hue},90%,68%,${a})`;
+    ctx.lineWidth = 1 + r.life * 2.2;
+    ctx.stroke();
+
+    // شكل هندسي متعدد الأضلاع يدور مع الحلقة
+    if (r.r > 12) {
+      const pr = r.r * 0.82;
+      ctx.beginPath();
+      for (let k = 0; k <= r.sides; k++) {
+        const ang = r.angle + (k / r.sides) * Math.PI * 2;
+        const px = r.x + Math.cos(ang) * pr;
+        const py = r.y + Math.sin(ang) * pr;
+        if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = `hsla(${(r.hue + 55) % 360},92%,72%,${a * 0.62})`;
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r * 0.62 * wob, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(${(r.hue + 40) % 360},90%,74%,${a * 0.45})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // نواة متوهجة
+    if (r.r < r.max * 0.45) {
+      const ga = (1 - r.r / (r.max * 0.45)) * 0.5;
+      const gr = ctx.createRadialGradient(r.x, r.y, 0, r.x, r.y, 42);
+      gr.addColorStop(0, `hsla(${r.hue},95%,80%,${ga})`);
+      gr.addColorStop(1, `hsla(${r.hue},95%,60%,0)`);
+      ctx.fillStyle = gr;
+      ctx.beginPath(); ctx.arc(r.x, r.y, 42, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // الجزيئات
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vx *= 0.985; p.vy *= 0.985;
+    p.vy += 0.012;
+    p.life -= 0.016;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${p.hue},92%,72%,${Math.max(0, p.life) * 0.85})`;
+    ctx.fill();
+  }
+
+  // الخطوط الواصلة
+  for (let i = beams.length - 1; i >= 0; i--) {
+    const b = beams[i];
+    b.life -= 0.012;
+    if (b.life <= 0) { beams.splice(i, 1); continue; }
+    ctx.beginPath();
+    ctx.moveTo(b.a.x, b.a.y);
+    ctx.lineTo(b.b.x, b.b.y);
+    ctx.strokeStyle = `hsla(${b.hue},85%,70%,${b.life * 0.28})`;
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+  }
+
+  // مسار المؤشر
+  if (trail.length > 1) {
+    ctx.beginPath();
+    ctx.moveTo(trail[0].x, trail[0].y);
+    for (let i = 1; i < trail.length; i++) {
+      const p = trail[i];
+      ctx.lineTo(p.x, p.y + Math.sin(i * 0.7 + performance.now() * 0.004) * 3);
+    }
+    ctx.strokeStyle = `hsla(${hueBase + 60},92%,72%,.5)`;
+    ctx.lineWidth = 1.7;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+draw();
+
+/* ============================================================
+   القسم 5 — التفاعل مع المسرح (ماوس + لمس + كيبورد)
+   ============================================================ */
+let drawing = false;
+let lastMoveTime = 0;
+let lastMoveDist = 0;
+const held = new Map(); // نغمات الكيبورد المستمرّة
+
+function posFromEvent(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+// تحويل الموضع إلى درجة داخل السلّم (المحور الأفقي) + شدة (العمودي)
+function degreeFromX(x) {
+  const steps = SCALES[State.scale].steps.length;
+  const octaves = 3;
+  const span = steps * octaves;
+  const t = Math.min(0.999, Math.max(0, x / W));
+  return t * span;
+}
+function intensityFromY(y) {
+  const t = 1 - Math.min(1, Math.max(0, y / H));
+  return 0.18 + t * 0.82;
+}
+
+function playAt(x, y, vel) {
+  Audio_.resume();
+  const deg = degreeFromX(x);
+  const freq = Scale.freqAt(deg);
+  const strength = vel;
+  Audio_.tone(freq, {
+    wave: State.wave,
+    dur: 0.55 + strength * 0.75,
+    gain: 0.10 + strength * 0.26,
+    filter: 1400 + strength * 5200,
+    count: true,
+  });
+  spawnRipple(x, y, freq, strength);
+  setCurrent(freq);
+  return freq;
+}
+
+function setCurrent(freq) {
+  State.currentFreq = freq;
+  State.currentNote = Scale.nameOf(freq);
+  const sn = document.getElementById("sbNote");
+  const sf = document.getElementById("sbFreq");
+  if (sn) sn.textContent = State.currentNote;
+  if (sf) sf.textContent = freq ? `${freq.toFixed(1)} Hz` : "—";
+  const st = document.getElementById("statusText");
+  if (st) st.textContent = `يعزف الآن: ${State.currentNote}`;
+}
+
+function pointerDown(e) {
+  if (e.button !== undefined && e.button !== 0 && e.pointerType === "mouse") return;
+  drawing = true;
+  canvas.setPointerCapture?.(e.pointerId);
+  const p = posFromEvent(e);
+  lastPoint = p;
+  trail = [p];
+  playAt(p.x, p.y, 0.85);
+  e.preventDefault();
+}
+
+function pointerMove(e) {
+  const p = posFromEvent(e);
+  trail.push(p);
+  if (trail.length > 60) trail.shift();
+  updateHover(p);
+
+  if (!drawing) return;
+  const now = performance.now();
+  const dt = Math.max(1, now - lastMoveTime);
+  const dx = p.x - (lastPoint ? lastPoint.x : p.x);
+  const dy = p.y - (lastPoint ? lastPoint.y : p.y);
+  const dist = Math.hypot(dx, dy);
+  const speed = dist / dt; // px/ms
+  lastMoveDist = lastMoveDist * 0.6 + speed * 0.4;
+  lastMoveTime = now;
+
+  // كلما كانت الحركة أسرع، ارتفعت النغمة وكثُر الرسم
+  const strength = Math.min(1, 0.35 + speed * 0.9);
+  if (dist > 3) {
+    if (lastPoint) spawnBeam(lastPoint, p);
+    playAt(p.x, p.y, strength);
+  }
+  lastPoint = p;
+}
+
+function pointerUp(e) {
+  if (!drawing) return;
+  drawing = false;
+  lastPoint = null;
+  const st = document.getElementById("statusText");
+  if (st) st.textContent = "جاهز للعزف";
+}
+
+canvas.addEventListener("pointerdown", pointerDown);
+canvas.addEventListener("pointermove", pointerMove);
+window.addEventListener("pointerup", pointerUp);
+window.addEventListener("pointercancel", pointerUp);
+canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+canvas.addEventListener("pointerleave", () => {
+  const el = document.getElementById("hoverNote");
+  if (el) el.hidden = true;
+  if (!drawing) KEY_ORDER.forEach((l) => highlightPiano(l, false));
+});
+
+// ---- الكيبورد ----
+// ملاحظة: خريطة المفاتيح (KEY_MAP) معرّفة في القسم 6 مع لوحة النغمات
+
+function keyDown(e) {
+  if (e.repeat) return;
+  const tag = (e.target && e.target.tagName) || "";
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(tag)) return;
+  const key = e.key.toLowerCase();
+  if (!(key in KEY_MAP)) return;
+  e.preventDefault();
+  Audio_.resume();
+
+  // Shift يرفع النغمة أوكتافاً كاملاً (عدد درجات السلّم)
+  const octave = SCALES[State.scale].steps.length;
+  const deg = KEY_MAP[key] + (e.shiftKey ? octave : 0);
+  const freq = Scale.freqAt(deg);
+  const node = Audio_.tone(freq, {
+    wave: State.wave,
+    dur: 2.6,
+    gain: 0.22,
+    attack: 0.012,
+    filter: 3200,
+  });
+  held.set(key, node);
+
+  // موضع بصري يوافق موقع المفتاح على الشاشة (يسار = منخفض)
+  const r = canvas.getBoundingClientRect();
+  const x = r.width * (0.08 + ((deg + 7) / 26) * 0.84);
+  const y = r.height * (0.6 - (e.shiftKey ? 0.16 : 0));
+  spawnRipple(x, y, freq, 0.8);
+  setCurrent(freq);
+  highlightKey(key, true);
+}
+
+function keyUp(e) {
+  const key = e.key.toLowerCase();
+  if (held.has(key)) {
+    held.get(key).stop();
+    held.delete(key);
+  }
+  highlightKey(key, false);
+}
+
+window.addEventListener("keydown", keyDown);
+window.addEventListener("keyup", keyUp);
+
+function highlightKey(key, on) {
+  const el = document.querySelector(`#kbdList [data-key="${key}"]`);
+  if (el) el.classList.toggle("on", on);
+  highlightPiano(key, on); // إضاءة المفتاح في لوحة النغمات أسفل المسرح
+}
+
+/* ============================================================
+   القسم 6 — القائمة الجانبية: الطي والسحب
+   ============================================================ */
+const sidebar = document.getElementById("sidebar");
+const toggleBtn = document.getElementById("toggleBtn");
+const toggleSidebar = document.getElementById("toggleSidebar");
+const scrim = document.getElementById("scrim");
+const resizer = document.getElementById("resizer");
+
+function isMobile() { return window.matchMedia("(max-width: 900px)").matches; }
+
+function toggleSidebarPanel() {
+  if (isMobile()) {
+    document.body.classList.toggle("drawer-open");
+    toggleSidebar.classList.toggle("ghost-active", document.body.classList.contains("drawer-open"));
+  } else {
+    sidebar.classList.toggle("collapsed");
+    toggleSidebar.classList.toggle("ghost-active", !sidebar.classList.contains("collapsed"));
+  }
+}
+toggleSidebar.addEventListener("click", toggleSidebarPanel);
+scrim.addEventListener("click", () => {
+  document.body.classList.remove("drawer-open");
+  toggleSidebar.classList.remove("ghost-active");
+});
+// زر Escape يغلق اللوحة الجانبية
+window.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  document.body.classList.remove("drawer-open");
+  toggleSidebar.classList.remove("ghost-active");
+  installModal.classList.remove("open");
+});
+
+// سحب المقبض لتغيير عرض القائمة (سطح المكتب)
+let dragging = false, startX = 0, startW = 0, targetW = 0;
+resizer.addEventListener("pointerdown", (e) => {
+  if (isMobile()) return;
+  dragging = true;
+  startX = e.clientX;
+  startW = sidebar.getBoundingClientRect().width;
+  targetW = startW;
+  document.body.classList.add("resizing");
+  sidebar.classList.add("no-anim");
+  resizer.setPointerCapture(e.pointerId);
+});
+window.addEventListener("pointermove", (e) => {
+  if (!dragging) return;
+  // اللوحة على اليمين → زيادة العرض عند السحب لليسار
+  targetW = Math.min(460, Math.max(250, startW + (startX - e.clientX)));
+  document.documentElement.style.setProperty("--sidebar-w", targetW + "px");
+});
+window.addEventListener("pointerup", () => {
+  if (!dragging) return;
+  dragging = false;
+  document.body.classList.remove("resizing");
+  sidebar.classList.remove("no-anim");
+  try { localStorage.setItem("hft_sidebar_w", String(Math.round(targetW))); } catch (e) {}
+});
+try {
+  const savedW = localStorage.getItem("hft_sidebar_w");
+  if (savedW) document.documentElement.style.setProperty("--sidebar-w", savedW + "px");
+} catch (e) {}
+
+/* ============================================================
+   القسم 6 — لوحة المفاتيح المرئية (كل حرف = نغمة + تردد)
+   ============================================================ */
+/* تخطيط QWERTY كامل: كل صف أعلى من الذي فوقه.
+   - الصف العلوي (Q W E R T Y U I O P) = درجة 9..18
+   - الصف الأوسط (A S D F G H J K L)   = درجة 0..8
+   - الصف السفلي (Z X C V B N M)        = درجة -7..-1  (أوكتاف أخفض)
+   الدرجات تُحسب على السلّم الحالي، فكل نغمة تنتمي للسلّم وتتناغم معه. */
+const KB_ROWS = [
+  { cls: "row-q", keys: [
+    ["q", 9], ["w", 10], ["e", 11], ["r", 12], ["t", 13],
+    ["y", 14], ["u", 15], ["i", 16], ["o", 17], ["p", 18],
+  ]},
+  { cls: "row-a", keys: [
+    ["a", 0], ["s", 1], ["d", 2], ["f", 3], ["g", 4],
+    ["h", 5], ["j", 6], ["k", 7], ["l", 8],
+  ]},
+  { cls: "row-z", keys: [
+    ["z", -7], ["x", -6], ["c", -5], ["v", -4],
+    ["b", -3], ["n", -2], ["m", -1],
+  ]},
+];
+const KEY_MAP = {};            // الحرف ← درجة السلّم
+const KEY_DEGREE = {};         // الحرف ← درجة (نسخة سريعة)
+KB_ROWS.forEach((r) => r.keys.forEach(([l, d]) => { KEY_MAP[l] = d; KEY_DEGREE[l] = d; }));
+const KEY_ORDER = Object.keys(KEY_DEGREE);
+
+const pianoHeld = new Map();   // نغمات لوحة المفاتيح المُمسوكة بالماوس
+
+// هل النغمة «حادّة» (سف sharp) مقارنة بالجذر؟ لتلوين المفاتيح
+function isSharpFreq(freq) {
+  const semi = Math.round(12 * Math.log2(freq / State.root));
+  return [1, 3, 6, 8, 10].includes(((semi % 12) + 12) % 12);
+}
+
+function buildPiano() {
+  const box = document.getElementById("keys");
+  if (!box) return;
+  box.innerHTML = "";
+  KB_ROWS.forEach((row) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "kb-row " + row.cls;
+    row.keys.forEach(([letter, deg]) => {
+      const freq = Scale.freqAt(deg);
+      const name = Scale.nameOf(freq);
+      const btn = document.createElement("button");
+      btn.className = "pkey" + (isSharpFreq(freq) ? " sharp" : "");
+      btn.dataset.deg = String(deg);
+      btn.dataset.key = letter;
+      btn.style.setProperty("--hue", String(Math.round(hueForFreq(freq))));
+      btn.title = `${letter.toUpperCase()} = ${name} · ${freq.toFixed(2)} Hz`;
+      btn.innerHTML =
+        `<span class="pk-letter">${letter.toUpperCase()}</span>` +
+        `<span class="pk-note">${name}</span>` +
+        `<span class="pk-hz">${freq.toFixed(1)} Hz</span>`;
+      btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        btn.setPointerCapture?.(e.pointerId);
+        playFromPiano(deg, letter);
+      });
+      const release = () => releaseFromPiano(letter);
+      btn.addEventListener("pointerup", release);
+      btn.addEventListener("pointercancel", release);
+      btn.addEventListener("pointerleave", (e) => { if (e.buttons) release(); });
+      rowEl.appendChild(btn);
+    });
+    box.appendChild(rowEl);
+  });
+  updateEdgeNotes();
+}
+
+// تشغيل نغمة من لوحة المفاتيح (مضغوطة بالمؤشر = نغمة مستمرة)
+function playFromPiano(deg, letter) {
+  Audio_.resume();
+  const freq = Scale.freqAt(deg);
+  const node = Audio_.tone(freq, {
+    wave: State.wave, dur: 2.4, gain: 0.24, attack: 0.012, filter: 3200,
+  });
+  if (node) pianoHeld.set(letter, node);
+  highlightPiano(letter, true);
+  setCurrent(freq);
+  // ومضة بصرية على المسرح
+  const r = canvas.getBoundingClientRect();
+  const x = r.width * (0.08 + ((deg + 7) / 26) * 0.84);
+  spawnRipple(x, r.height * 0.45, freq, 0.7);
+}
+
+function releaseFromPiano(letter) {
+  if (pianoHeld.has(letter)) {
+    pianoHeld.get(letter).stop();
+    pianoHeld.delete(letter);
+  }
+  highlightPiano(letter, false);
+}
+
+function highlightPiano(letter, on) {
+  const el = document.querySelector(`.pkey[data-key="${letter}"]`);
+  if (el) el.classList.toggle("on", on);
+}
+
+// تسمية طرفي المسرح (أدنى وأعلى نغمة في مدى الرسم بالماوس)
+function updateEdgeNotes() {
+  const steps = SCALES[State.scale].steps.length;
+  const total = steps * 3; // مدى المسرح = 3 أوكتافات
+  const lo = Scale.freqAt(0);
+  const hi = Scale.freqAt(total - 1);
+  const loEl = document.getElementById("edgeLo");
+  const hiEl = document.getElementById("edgeHi");
+  if (loEl) loEl.innerHTML = `أدنى نغمة (يسار المسرح)<b>${Scale.nameOf(lo)}</b><i>${lo.toFixed(1)} Hz</i>`;
+  if (hiEl) hiEl.innerHTML = `أعلى نغمة (يمين المسرح)<b>${Scale.nameOf(hi)}</b><i>${hi.toFixed(1)} Hz</i>`;
+}
+
+// بطاقة النغمة أسفل المؤشر + إضاءة أقرب مفتاح في اللوحة
+function updateHover(p) {
+  const el = document.getElementById("hoverNote");
+  if (!el) return;
+  const deg = degreeFromX(p.x);
+  const freq = Scale.freqAt(deg);
+  el.hidden = false;
+  el.innerHTML = `${Scale.nameOf(freq)} <b>${freq.toFixed(1)} Hz</b>`;
+  el.style.left = Math.min(p.x + 16, canvas.clientWidth - 120) + "px";
+  el.style.top = Math.max(8, p.y - 36) + "px";
+
+  // إضاءة أقرب مفتاح في اللوحة
+  let best = null, bestDist = Infinity;
+  for (const letter in KEY_DEGREE) {
+    const d = Math.abs(KEY_DEGREE[letter] - deg);
+    if (d < bestDist) { bestDist = d; best = letter; }
+  }
+  if (best) {
+    KEY_ORDER.forEach((l) => highlightPiano(l, false));
+    if (best && !pianoHeld.has(best)) highlightPiano(best, true);
+  }
+}
+
+// زر طيّ لوحة المفاتيح
+const pianoEl = document.getElementById("piano");
+const pianoToggle = document.getElementById("pianoToggle");
+pianoToggle.addEventListener("click", () => {
+  const collapsed = pianoEl.classList.toggle("collapsed");
+  pianoToggle.textContent = collapsed ? "إظهار ▴" : "طيّ ▾";
+  setTimeout(resizeCanvas, 280);
+});
+
+/* ============================================================
+   القسم 7 — عناصر التحكم
+   ============================================================ */
+function bindRange(id, fmt, onChange) {
+  const el = document.getElementById(id);
+  const out = document.getElementById(fmt.outId);
+  const apply = () => {
+    const v = Number(el.value);
+    el.style.setProperty("--p", ((v - el.min) / (el.max - el.min)) * 100 + "%");
+    if (out) out.textContent = fmt.fn(v);
+    onChange(v);
+  };
+  el.addEventListener("input", apply);
+  apply();
+}
+
+// الموجة
+document.querySelectorAll("#waveSeg button").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#waveSeg button").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    State.wave = b.dataset.wave;
+  });
+});
+
+// السلّم
+const scaleSel = document.getElementById("scaleSel");
+scaleSel.addEventListener("change", () => {
+  State.scale = scaleSel.value;
+  buildPiano();
+});
+const rootSel = document.getElementById("rootSel");
+rootSel.addEventListener("change", () => {
+  State.root = Number(rootSel.value);
+  buildPiano();
+});
+
+// الحجم والصدى
+bindRange("volume", { outId: "volVal", fn: (v) => v + "%" }, (v) => {
+  State.volume = v / 100;
+  if (Audio_.master) Audio_.master.gain.setTargetAtTime(State.volume, Audio_.ctx.currentTime, 0.02);
+});
+bindRange("echo", { outId: "echoVal", fn: (v) => v + "%" }, (v) => {
+  State.echo = v / 100;
+  if (Audio_.wet) Audio_.wet.gain.setTargetAtTime(State.echo, Audio_.ctx.currentTime, 0.03);
+});
+
+// اللوب
+bindRange("bpm", { outId: "bpmVal", fn: (v) => String(v) }, (v) => { State.bpm = v; });
+bindRange("loopVol", { outId: "loopVolVal", fn: (v) => v + "%" }, (v) => {
+  State.loopVol = v / 100;
+  if (Audio_.loopBus) Audio_.loopBus.gain.setTargetAtTime(State.loopVol, Audio_.ctx.currentTime, 0.03);
+});
+const loopPattern = document.getElementById("loopPattern");
+loopPattern.addEventListener("change", () => { State.pattern = loopPattern.value; });
+
+/* ============================================================
+   القسم 8 — مشغّل اللوب الخلفي
+   ============================================================ */
+const Loop = {
+  timer: null,
+  nextTime: 0,
+  step: 0,
+
+  start() {
+    Audio_.resume();
+    if (!Audio_.ctx) return;
+    this.stopTimer();
+    this.step = 0;
+    this.nextTime = Audio_.ctx.currentTime + 0.08;
+    this.timer = setInterval(() => this.schedule(), 25);
+    State.loopPlaying = true;
+    const btn = document.getElementById("loopBtn");
+    document.getElementById("loopBtnText").textContent = "إيقاف اللوب";
+    btn.classList.remove("primary");
+    btn.style.background = "linear-gradient(135deg,#ff3d64,#c81e50)";
+    document.getElementById("liveDot").classList.add("on");
+  },
+
+  stopTimer() {
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+  },
+
+  stop() {
+    this.stopTimer();
+    State.loopPlaying = false;
+    const btn = document.getElementById("loopBtn");
+    document.getElementById("loopBtnText").textContent = "تشغيل اللوب";
+    btn.classList.add("primary");
+    btn.style.background = "";
+    document.getElementById("liveDot").classList.remove("on");
+  },
+
+  toggle() { State.loopPlaying ? this.stop() : this.start(); },
+
+  schedule() {
+    if (!Audio_.ctx) return;
+    const ctx = Audio_.ctx;
+    const spb = 60 / State.bpm;       // ثوانٍ لكل نبضة
+    const stepDur = spb / 4;          // sixteenth
+    const ahead = 0.14;
+
+    while (this.nextTime < ctx.currentTime + ahead) {
+      this.playStep(this.step, this.nextTime - ctx.currentTime);
+      this.nextTime += stepDur;
+      this.step++;
+    }
+  },
+
+  playStep(step, when) {
+    const s = step % 16;
+    const bar = Math.floor(step / 16);
+    const pattern = State.pattern;
+    const steps = SCALES[State.scale].steps.length;
+
+    // نغمة باص متدرجة من السلّم
+    const degSeq = pattern === "heartbeat"
+      ? [0, 0, 4, 0, 2, 0, 4, 5]
+      : pattern === "wave"
+        ? [0, 2, 4, 2, 5, 4, 2, 0]
+        : pattern === "pulse"
+          ? [0, 3, 5, 3, 4, 3, 2, 0]
+          : [0, 4, 2, 5];
+    const deg = degSeq[(step >> 2) % degSeq.length] + (bar % 2 ? 2 : 0);
+    const freq = Scale.freqAt(deg);
+
+    // الباص
+    if (pattern === "heartbeat") {
+      if (s === 0 || s === 3 || s === 8 || s === 11) {
+        Audio_.tone(freq / 2, { wave: "sine", dur: 0.5, gain: 0.30, when, toBus: Audio_.loopBus, filter: 900 });
+      }
+    } else if (pattern === "ambient") {
+      if (s === 0 || s === 8) {
+        Audio_.tone(freq / 2, { wave: "triangle", dur: 2.2, gain: 0.26, when, toBus: Audio_.loopBus, filter: 800 });
+      }
+    } else {
+      if (s % 4 === 0) {
+        Audio_.tone(freq / 2, { wave: "sine", dur: 0.6, gain: 0.30, when, toBus: Audio_.loopBus, filter: 1100 });
+      }
+    }
+
+    // إيقاع
+    if (pattern === "pulse") {
+      if (s % 4 === 0) Audio_.kick(when, 0.34, 82);
+      if (s % 4 === 2) Audio_.hat(when, 0.10);
+    } else if (pattern === "heartbeat") {
+      if (s === 0 || s === 3 || s === 8 || s === 11) Audio_.kick(when, 0.22, 62);
+    } else if (pattern === "wave") {
+      if (s % 8 === 0) Audio_.kick(when, 0.26, 74);
+      if (s % 4 === 2) Audio_.hat(when, 0.055);
+    } else {
+      if (s === 0 || s === 6) Audio_.hat(when, 0.045);
+    }
+
+    // توهج بصري مع الإيقاع
+    if (s % 4 === 0) {
+      const r = canvas.getBoundingClientRect();
+      spawnRipple(r.width * 0.5, r.height * 0.5, freq, 0.45);
+    }
+  },
+};
+
+document.getElementById("loopBtn").addEventListener("click", () => Loop.toggle());
+
+/* ============================================================
+   القسم 9 — استوديو التسجيل (Voice + Music)
+   ============================================================ */
+const Recorder = {
+  mediaRecorder: null,
+  musicRecorder: null,
+  musicChunks: [],
+  musicStopPromise: null,
+  chunks: [],
+  stream: null,
+  micStream: null,
+  timerId: null,
+  micAnalyser: null,
+  micData: null,
+  levelRaf: null,
+  startTime: 0,
+  lastBlob: null,
+  lastUrl: null,
+  lastName: "",
+
+  //-bitrate حسب اختيار المستخدم (خفيف افتراضياً)
+  bitrate() {
+    const sel = document.getElementById("recQuality");
+    return sel ? Number(sel.value) : 48000;
+  },
+
+  async start() {
+    Audio_.resume();
+    if (!window.MediaRecorder) { setStatus("\u0627\u0644\u0645\u062a\u0635\u0641\u062d \u0644\u0627 \u064a\u062f\u0639\u0645 \u0627\u0644\u062a\u0633\u062c\u064a\u0644"); return; }
+    if (!Audio_.ctx || !Audio_.recDest) {
+      setStatus("التسجيل غير مدعوم في هذا المتصفح");
+      return;
+    }
+    try {
+      this.micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+    } catch (err) {
+      setStatus("تعذّر الوصول إلى الميكروفون — تأكد من منح الإذن");
+      toast("⚠️", "لم يُسمح باستخدام الميكروفون", false);
+      console.warn("mic error", err);
+      return;
+    }
+
+    const ctx = Audio_.ctx;
+    // الميكروفون يدخل التسجيل فقط (لا يمرّ إلى السماعات تفادياً للصدى)
+    const micSrc = ctx.createMediaStreamSource(this.micStream);
+    const micGain = ctx.createGain();
+    micGain.gain.value = 1.15;
+    micSrc.connect(micGain);
+    micGain.connect(Audio_.recDest);
+
+    // محلل مستوى الصوت لعرض المؤشر (لا يخرج صوتاً للسماعات)
+    this.micAnalyser = ctx.createAnalyser();
+    this.micAnalyser.fftSize = 512;
+    this.micAnalyser.smoothingTimeConstant = 0.7;
+    this.micData = new Uint8Array(this.micAnalyser.frequencyBinCount);
+    micSrc.connect(this.micAnalyser);
+
+    // الصوت المولَّد (نغمات + لوب) يدخل التسجيل عبر تحويلة إضافية
+
+    if (!State.loopPlaying) Loop.start();
+    const musicDest = ctx.createMediaStreamDestination();
+    Audio_.master.connect(musicDest);
+
+    const opts = { mimeType: "audio/webm;codecs=opus", audioBitsPerSecond: this.bitrate() };
+    if (!window.MediaRecorder) { setStatus("المتصفح لا يدعم التسجيل"); return; }
+    if (!MediaRecorder.isTypeSupported(opts.mimeType)) {
+      opts.mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+    }
+
+    this.chunks = [];
+    this.musicChunks = [];
+    this.mediaRecorder = new MediaRecorder(Audio_.recDest.stream, opts);
+    this.mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) this.chunks.push(e.data); };
+    this.mediaRecorder.onstop = () => this.finish();
+
+    this.musicStopPromise = new Promise((resolve) => {
+      this.musicRecorder = new MediaRecorder(musicDest.stream, opts);
+      this.musicRecorder.ondataavailable = (e) => { if (e.data && e.data.size) this.musicChunks.push(e.data); };
+      this.musicRecorder.onstop = () => {
+        try { Audio_.master.disconnect(musicDest); } catch (e) {}
+        musicDest.stream.getTracks().forEach((track) => track.stop());
+        resolve(new Blob(this.musicChunks, { type: this.musicRecorder.mimeType || "audio/webm" }));
+      };
+      this.musicRecorder.start(200);
+    });
+    this.mediaRecorder.start(200);
+
+    State.recording = true;
+    this.startTime = Date.now();
+    this.timerId = setInterval(() => this.tick(), 200);
+    this.drawLevel();
+
+    // مزامنة كل الأزرار (الشريط الجانبي + الزر العائم)
+    document.getElementById("recBtn").classList.add("recording");
+    document.getElementById("recBtnText").textContent = "\\u0625\\u064a\\u0642\\u0627\\u0641 \\u0627\\u0644\\u062a\\u0633\\u062c\\u064a\\u0644";
+    const fab = document.getElementById("recFab");
+    fab.classList.add("recording");
+    document.getElementById("recFabText").textContent = "\\u0625\\u064a\\u0642\\u0627\\u0641 \\u0627\\u0644\\u062a\\u0633\\u062c\\u064a\\u0644";
+    document.getElementById("recDockInfo").hidden = false;
+    document.getElementById("recVignette").classList.add("on");
+    document.getElementById("liveDot").classList.add("on");
+    setStatus("جارٍ التسجيل… عزّف فوق النغمة!");
+  },
+
+  // مؤشّر مستوى الصوت (يعمل مع حلقة الرسم)
+  drawLevel() {
+    const bar = document.getElementById("recLevel");
+    const step = () => {
+      if (!State.recording) return;
+      if (this.micAnalyser && this.micData) {
+        this.micAnalyser.getByteTimeDomainData(this.micData);
+        let peak = 0;
+        for (let i = 0; i < this.micData.length; i++) {
+          const v = Math.abs(this.micData[i] - 128) / 128;
+          if (v > peak) peak = v;
+        }
+        if (bar) bar.style.width = Math.min(100, peak * 240) + "%";
+      }
+      this.levelRaf = requestAnimationFrame(step);
+    };
+    this.levelRaf = requestAnimationFrame(step);
+  },
+
+  tick() {
+    const s = Math.floor((Date.now() - this.startTime) / 1000);
+    const txt = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    const el = document.getElementById("recTimer");
+    el.textContent = txt;
+    el.classList.add("on");
+    const dock = document.getElementById("recDockTimer");
+    if (dock) dock.textContent = txt;
+  },
+
+  stop() {
+    if (!this.mediaRecorder || this.mediaRecorder.state === "inactive") return;
+    this.mediaRecorder.stop();
+    if (this.musicRecorder && this.musicRecorder.state !== "inactive") this.musicRecorder.stop();
+    if (this.timerId) { clearInterval(this.timerId); this.timerId = null; }
+    if (this.levelRaf) { cancelAnimationFrame(this.levelRaf); this.levelRaf = null; }
+    if (this.micAnalyser) { try { this.micAnalyser.disconnect(); } catch (e) {} this.micAnalyser = null; }
+    if (this.micStream) { this.micStream.getTracks().forEach((t) => t.stop()); this.micStream = null; }
+    State.recording = false;
+
+    document.getElementById("recBtn").classList.remove("recording");
+    document.getElementById("recBtnText").textContent = "\\u0628\\u062f\\u0621 \\u062a\\u0633\\u062c\\u064a\\u0644 \\u0627\\u0644\\u0635\\u0648\\u062a \\u0641\\u0642\\u0637";
+    const fab = document.getElementById("recFab");
+    fab.classList.remove("recording");
+    document.getElementById("recFabText").textContent = "\\u0633\\u062c\\u0651\\u0644 \\u0635\\u0648\\u062a\\u0643";
+    document.getElementById("recDockInfo").hidden = true;
+    document.getElementById("recVignette").classList.remove("on");
+    const bar = document.getElementById("recLevel");
+    if (bar) bar.style.width = "0%";
+    document.getElementById("liveDot").classList.toggle("on", State.loopPlaying);
+  },
+
+  async finish() {
+    const voiceType = this.mediaRecorder.mimeType || "audio/webm";
+    const voiceBlob = new Blob(this.chunks, { type: voiceType });
+    let blob = voiceBlob;
+    try {
+      const musicBlob = await this.musicStopPromise;
+      if (musicBlob && musicBlob.size) blob = await this.mixTracks(voiceBlob, musicBlob);
+    } catch (err) {
+      console.warn("Could not mix accompaniment; keeping the vocal recording", err);
+      toast("!", "????? ??? ????????? ?? ???????? ?????? ?????", false);
+    }
+    const type = blob.type || voiceType;
+    if (this.lastUrl) URL.revokeObjectURL(this.lastUrl);
+    this.lastBlob = blob;
+    this.lastUrl = URL.createObjectURL(blob);
+
+    const player = document.getElementById("recPlayer");
+    player.src = this.lastUrl;
+    document.getElementById("recOut").hidden = false;
+    document.getElementById("recTimer").textContent = "00:00";
+    document.getElementById("recTimer").classList.remove("on");
+
+    // حجم الملف الخفيف + اسم الملف
+    const kb = blob.size / 1024;
+    const sizeTxt = kb < 1024 ? `${kb.toFixed(1)} KB` : `${(kb / 1024).toFixed(2)} MB`;
+    const meta = document.getElementById("recMeta");
+    if (meta) meta.innerHTML = `📄 <b>${sizeTxt}</b> · ${type.includes("opus") ? "Opus" : "WebM"}`;
+    this.lastName = this.makeName();
+
+    // حفظ تلقائي على الجهاز
+    const auto = document.getElementById("recAutoSave");
+    if (auto && auto.checked) {
+      this.download();
+      toast("✅", `تم حفظ المقطع تلقائياً (${sizeTxt})`, true);
+    } else {
+      toast("✅", `اكتمل التسجيل — ${sizeTxt}`, true);
+    }
+    setStatus("اكتمل التسجيل — استمع أو حمّل المقطع");
+  },
+
+  async mixTracks(voiceBlob, musicBlob) {
+    const ctx = Audio_.ctx;
+    const decode = async (blob) => ctx.decodeAudioData(await blob.arrayBuffer());
+    const [voice, music] = await Promise.all([decode(voiceBlob), decode(musicBlob)]);
+    const sampleRate = ctx.sampleRate;
+    const frames = Math.max(voice.length, music.length);
+    const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const offline = new Offline(2, frames, sampleRate);
+    const voiceSource = offline.createBufferSource();
+    const voiceGain = offline.createGain();
+    voiceSource.buffer = voice;
+    voiceGain.gain.value = 0.82;
+    voiceSource.connect(voiceGain).connect(offline.destination);
+    const musicSource = offline.createBufferSource();
+    const musicGain = offline.createGain();
+    musicSource.buffer = music;
+    musicGain.gain.value = 0.58;
+    musicSource.connect(musicGain).connect(offline.destination);
+    voiceSource.start(0);
+    musicSource.start(0);
+    const rendered = await offline.startRendering();
+    return this.audioBufferToWav(rendered);
+  },
+
+  audioBufferToWav(buffer) {
+    const channels = Math.min(2, buffer.numberOfChannels);
+    const frames = buffer.length;
+    const dataSize = frames * channels * 2;
+    const out = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(out);
+    const write = (offset, value) => { for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i)); };
+    write(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); write(8, "WAVE");
+    write(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+    view.setUint16(22, channels, true); view.setUint32(24, buffer.sampleRate, true);
+    view.setUint32(28, buffer.sampleRate * channels * 2, true); view.setUint16(32, channels * 2, true);
+    view.setUint16(34, 16, true); write(36, "data"); view.setUint32(40, dataSize, true);
+    let offset = 44;
+    for (let i = 0; i < frames; i++) {
+      for (let ch = 0; ch < channels; ch++) {
+        const sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+        view.setInt16(offset, sample < 0 ? sample * 32768 : sample * 32767, true);
+        offset += 2;
+      }
+    }
+    return new Blob([out], { type: "audio/wav" });
+  },
+
+  makeName() {
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    return `hidden-frequency-${stamp}.wav`;
+  },
+
+  download() {
+    if (!this.lastUrl) return;
+    const a = document.createElement("a");
+    a.href = this.lastUrl;
+    a.download = this.lastName || this.makeName();
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  },
+};
+
+document.getElementById("recFab").title = "\u0633\u062c\u0651\u0644 \u0635\u0648\u062a\u0643 \u0648\u062d\u062f\u0647\u060c \u0648\u0627\u0644\u0645\u0648\u0642\u0639 \u064a\u0636\u064a\u0641 \u0645\u0648\u0633\u064a\u0642\u0627\u0647 \u0625\u0644\u0649 \u0627\u0644\u0645\u0644\u0641";
+document.getElementById("recFabText").textContent = "\u0633\u062c\u0651\u0644 \u0635\u0648\u062a\u0643";
+document.getElementById("recExplanation").textContent = "\u0633\u062c\u0651\u0644 \u0635\u0648\u062a\u0643 \u0648\u062d\u062f\u0647\u061b \u0627\u0644\u0645\u0648\u0642\u0639 \u064a\u0648\u0644\u0651\u062f \u0627\u0644\u0645\u0648\u0633\u064a\u0642\u0649 \u0641\u064a \u0645\u0633\u0627\u0631 \u0645\u0646\u0641\u0635\u0644 \u062b\u0645 \u064a\u0645\u0632\u062c\u0647\u0627 \u0645\u0639 \u0635\u0648\u062a\u0643 \u0641\u064a \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0646\u0647\u0627\u0626\u064a.";
+
+document.getElementById("recBtnText").textContent = "\u0628\u062f\u0621 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u0635\u0648\u062a \u0641\u0642\u0637";
+const recBtn = document.getElementById("recBtn");
+recBtn.addEventListener("click", () => {
+  State.recording ? Recorder.stop() : Recorder.start();
+});
+
+// الزر العائم على المسرح
+document.getElementById("recFab").addEventListener("click", () => {
+  State.recording ? Recorder.stop() : Recorder.start();
+});
+
+// إشعار سريع
+function toast(icon, msg, ok = true) {
+  let el = document.getElementById("appToast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "appToast";
+    el.className = "toast";
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<span class="t-ico">${icon}</span><span>${msg}</span>`;
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), 3200);
+}
+
+document.getElementById("downloadBtn").addEventListener("click", () => Recorder.download());
+
+document.getElementById("discardBtn").addEventListener("click", () => {
+  const player = document.getElementById("recPlayer");
+  player.pause(); player.removeAttribute("src"); player.load();
+  document.getElementById("recOut").hidden = true;
+  if (Recorder.lastUrl) { URL.revokeObjectURL(Recorder.lastUrl); Recorder.lastUrl = null; }
+  Recorder.lastBlob = null;
+  setStatus("تم حذف المقطع المسجّل");
+});
+
+function setStatus(t) {
+  const el = document.getElementById("statusText");
+  if (el) el.textContent = t;
+}
+
+/* ============================================================
+   القسم 10 — عرض مفاتيح الكيبورد
+   ============================================================ */
+(function buildKbdList() {
+  const box = document.getElementById("kbdList");
+  if (!box) return;
+  KB_ROWS.forEach((row) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "kbd-row";
+    row.keys.forEach(([k]) => {
+      const el = document.createElement("span");
+      el.className = "chip";
+      el.dataset.key = k;
+      el.style.transition = "all .1s";
+      el.innerHTML = `<kbd>${k.toUpperCase()}</kbd>`;
+      rowEl.appendChild(el);
+    });
+    box.appendChild(rowEl);
+  });
+  const style = document.createElement("style");
+  style.textContent = `.chip.on{background:linear-gradient(135deg,#7c5cff,#56d6ff);color:#fff;border-color:transparent;transform:translateY(-2px)}
+    .kbd-row{display:flex;flex-wrap:wrap;gap:4px;margin-block-end:4px}`;
+  document.head.appendChild(style);
+})();
+
+/* ============================================================
+   القسم 11 — PWA: التثبيت و Service Worker
+   ============================================================ */
+let deferredPrompt = null;
+const installBtn = document.getElementById("installBtn");
+const installModal = document.getElementById("installModal");
+
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+function isStandalone() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true
+  );
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.hidden = false;
+  installBtn.querySelector("span").textContent = "تحميل التطبيق";
+});
+
+window.addEventListener("appinstalled", () => {
+  State.installed = true;
+  installBtn.hidden = true;
+  deferredPrompt = null;
+  setStatus("تم تثبيت التطبيق بنجاح");
+});
+
+installBtn.addEventListener("click", async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const res = await deferredPrompt.userChoice.catch(() => null);
+    if (res && res.outcome === "accepted") installBtn.hidden = true;
+    deferredPrompt = null;
+  } else {
+    // لا يدعم المتصفح التثبيت التلقائي → نعرض شرحاً خطوة بخطوة
+    const msg = document.getElementById("installMsg");
+    const steps = document.getElementById("installSteps");
+    if (isIOS()) {
+      msg.textContent = "على جهاز iPhone أو iPad: افتح التطبيق في Safari ثم أضفه إلى شاشتك الرئيسية — بعد ذلك يعمل التطبيق دون إنترنت كتطبيق مستقل.";
+      steps.innerHTML = "<li>اضغط زر <b>المشاركة</b> في شريط Safari (أيقونة السهم لأعلى).</li>" +
+                        "<li>اختر <b>«إضافة إلى الشاشة الرئيسية»</b> ثم <b>إضافة</b>.</li>" +
+                        "<li>افتح التطبيق من أيقونته على شاشتك الرئيسية.</li>";
+    } else {
+      msg.textContent = "لم يظهر تنبيه التثبيت التلقائي في هذا المتصفح، لكن يمكنك تثبيت التطبيق يدوياً عبر خيارات القائمة:";
+    }
+    installModal.classList.add("open");
+  }
+});
+
+document.getElementById("installModalOk").addEventListener("click", () => {
+  installModal.classList.remove("open");
+});
+document.getElementById("installModalClose").addEventListener("click", () => {
+  installModal.classList.remove("open");
+});
+installModal.addEventListener("click", (e) => {
+  if (e.target === installModal) installModal.classList.remove("open");
+});
+
+// زر التثبيت متاح دائماً (ما لم يكن التطبيق مثبتاً بالفعل)
+if (isStandalone()) {
+  installBtn.hidden = true;
+}
+
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch((err) => console.warn("SW:", err));
+  });
+}
+
+/* ============================================================
+   القسم 12 — منع سلوك الصفحة المزعج + تنظيف
+   ============================================================ */
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+window.addEventListener("beforeunload", (e) => {
+  if (State.recording) { e.preventDefault(); e.returnValue = ""; }
+});
+window.addEventListener("blur", () => {
+  held.forEach((n) => n.stop());
+  held.clear();
+});
+
+// أول تفاعل: تشغيل سياق الصوت تلقائياً
+window.addEventListener("pointerdown", () => Audio_.resume(), { once: true });
+window.addEventListener("keydown", () => Audio_.resume(), { once: true });
+
+// بناء لوحة النغمات عند الإقلاع
+buildPiano();
+
+console.log("%cمسرح الترددات المخفية جاهز 🎭", "color:#8cf0ff;font-weight:bold");
+})();
+</script>
+</body>
+</html>
