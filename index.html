@@ -368,6 +368,7 @@ audio{
   display:flex;flex-direction:column;align-items:flex-start;gap:8px;
   pointer-events:none;
 }
+.rec-fab-row{display:flex;flex-wrap:wrap;gap:8px;pointer-events:none}
 .rec-fab{
   pointer-events:auto;
   display:inline-flex;align-items:center;gap:9px;
@@ -377,6 +378,12 @@ audio{
   box-shadow:0 10px 28px rgba(124,92,255,.42);
   transition:transform .12s,box-shadow .2s,background .2s;
 }
+.rec-fab svg{width:16px;height:16px;flex:none}
+.rec-fab.voice{
+  background:linear-gradient(135deg,#0e9f8a,#14b8a6);
+  box-shadow:0 10px 28px rgba(20,184,166,.38);
+}
+.rec-fab.voice:hover{box-shadow:0 14px 32px rgba(20,184,166,.5)}
 .rec-fab:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(124,92,255,.55)}
 .rec-fab:active{transform:translateY(0)}
 .rec-fab-dot{
@@ -387,7 +394,10 @@ audio{
   background:linear-gradient(135deg,#ff3d64,#c81e50);
   box-shadow:0 10px 28px rgba(255,61,100,.45);
 }
+.rec-fab.voice.recording{background:linear-gradient(135deg,#ff3d64,#c81e50)}
+.rec-fab.dim{opacity:.42;filter:grayscale(.4)}
 .rec-fab.recording .rec-fab-dot{background:#fff;animation:blink 1s steps(2) infinite}
+.rec-fab.voice svg{animation:blink 1s steps(2) infinite}
 .rec-dock-info{
   pointer-events:none;display:flex;align-items:center;gap:9px;
   padding:7px 13px;border-radius:999px;
@@ -735,6 +745,13 @@ body.drawer-open .scrim{opacity:1;pointer-events:auto}
           <span id="recBtnText">بدء التسجيل</span>
         </button>
         <div class="field" style="margin-top:12px">
+          <label for="recMode">محتوى التسجيل</label>
+          <select id="recMode">
+            <option value="mix">صوتك + موسيقى التطبيق</option>
+            <option value="voice">صوتك فقط (الموسيقى تُسمع ولا تُسجَّل)</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="recQuality">حجم الملف</label>
           <select id="recQuality">
             <option value="48000">خفيف (48 kbps) — الأصغر حجماً</option>
@@ -759,8 +776,9 @@ body.drawer-open .scrim{opacity:1;pointer-events:auto}
             <button class="btn" id="discardBtn">حذف</button>
           </div>
         </div>
-        <div class="note" id="recExplanation" style="margin-top:11px">
-          يُدمج صوتك (الميكروفون) مع النغمات واللوب الموسيقي في <b>مقطع واحد</b> يُسجَّل ويُحفظ داخل جهازك.
+        <div class="note" style="margin-top:11px">
+          في وضع <b>«صوتك + موسيقى التطبيق»</b> يُدمج صوتك مع النغمات واللوب في مقطع واحد.
+          وفي وضع <b>«صوتك فقط»</b> يُسجَّل صوتك وحده — بينما تبقى موسيقى الموقع تُسمع في أذنك لتعبز فوقها، فلا تدخل الملف.
         </div>
       </section>
 
@@ -803,14 +821,22 @@ body.drawer-open .scrim{opacity:1;pointer-events:auto}
 
       <!-- زر إضافة الصوت مع النغمة -->
       <div class="rec-dock" id="recDock">
-        <button class="rec-fab" id="recFab" title="سجّل صوتك مع النغمات واحفظه كملف">
-          <span class="rec-fab-dot"></span>
-          <span id="recFabText">أضف صوتك</span>
-        </button>
+        <div class="rec-fab-row">
+          <button class="rec-fab" id="recFab" title="سجّل صوتك مع النغمات الموسيقية">
+            <span class="rec-fab-dot"></span>
+            <span id="recFabText">أضف صوتك</span>
+          </button>
+          <button class="rec-fab voice" id="recFabVoice" title="سجّل صوتك فقط — الموسيقى من الموقع تُسمع ولا تُسجَّل">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>
+            </svg>
+            <span id="recFabVoiceText">صوتك فقط</span>
+          </button>
+        </div>
         <div class="rec-dock-info" id="recDockInfo" hidden>
           <span class="rec-dock-timer" id="recDockTimer">00:00</span>
           <div class="rec-level"><i id="recLevel"></i></div>
-          <span class="rec-dock-hint">جارٍ التسجيل… عزّف فوق النغمة</span>
+          <span class="rec-dock-hint" id="recDockHint">جارٍ التسجيل… عزّف فوق النغمة</span>
         </div>
       </div>
       <div class="rec-vignette" id="recVignette"></div>
@@ -873,6 +899,7 @@ const State = {
   pattern: "ambient",
   loopPlaying: false,
   recording: false,
+  recMode: "mix",
   currentNote: null,
   currentFreq: null,
   installed: false,
@@ -1804,13 +1831,11 @@ document.getElementById("loopBtn").addEventListener("click", () => Loop.toggle()
    ============================================================ */
 const Recorder = {
   mediaRecorder: null,
-  musicRecorder: null,
-  musicChunks: [],
-  musicStopPromise: null,
   chunks: [],
   stream: null,
   micStream: null,
   timerId: null,
+  musicToRec: null,
   micAnalyser: null,
   micData: null,
   levelRaf: null,
@@ -1818,6 +1843,7 @@ const Recorder = {
   lastBlob: null,
   lastUrl: null,
   lastName: "",
+  mode: "mix",   // "mix" = صوتك + الموسيقى · "voice" = صوتك فقط
 
   //-bitrate حسب اختيار المستخدم (خفيف افتراضياً)
   bitrate() {
@@ -1827,7 +1853,6 @@ const Recorder = {
 
   async start() {
     Audio_.resume();
-    if (!window.MediaRecorder) { setStatus("\u0627\u0644\u0645\u062a\u0635\u0641\u062d \u0644\u0627 \u064a\u062f\u0639\u0645 \u0627\u0644\u062a\u0633\u062c\u064a\u0644"); return; }
     if (!Audio_.ctx || !Audio_.recDest) {
       setStatus("التسجيل غير مدعوم في هذا المتصفح");
       return;
@@ -1847,7 +1872,7 @@ const Recorder = {
     // الميكروفون يدخل التسجيل فقط (لا يمرّ إلى السماعات تفادياً للصدى)
     const micSrc = ctx.createMediaStreamSource(this.micStream);
     const micGain = ctx.createGain();
-    micGain.gain.value = 1.15;
+    micGain.gain.value = this.mode === "voice" ? 1.35 : 1.15;
     micSrc.connect(micGain);
     micGain.connect(Audio_.recDest);
 
@@ -1858,11 +1883,17 @@ const Recorder = {
     this.micData = new Uint8Array(this.micAnalyser.frequencyBinCount);
     micSrc.connect(this.micAnalyser);
 
-    // الصوت المولَّد (نغمات + لوب) يدخل التسجيل عبر تحويلة إضافية
-
-    if (!State.loopPlaying) Loop.start();
-    const musicDest = ctx.createMediaStreamDestination();
-    Audio_.master.connect(musicDest);
+    // الصوت المولَّد (نغمات + لوب): يُسمع دائماً عبر السماعات،
+    // لكن يُسجَّل فقط في وضع «صوتك + موسيقى» — أما «صوتك فقط» فلا يدخل الملف.
+    if (this.mode === "mix") {
+      const musicToRec = ctx.createGain();
+      musicToRec.gain.value = 1;
+      Audio_.master.connect(musicToRec);
+      musicToRec.connect(Audio_.recDest);
+      this.musicToRec = musicToRec;
+    } else {
+      this.musicToRec = null;
+    }
 
     const opts = { mimeType: "audio/webm;codecs=opus", audioBitsPerSecond: this.bitrate() };
     if (!window.MediaRecorder) { setStatus("المتصفح لا يدعم التسجيل"); return; }
@@ -1871,21 +1902,9 @@ const Recorder = {
     }
 
     this.chunks = [];
-    this.musicChunks = [];
     this.mediaRecorder = new MediaRecorder(Audio_.recDest.stream, opts);
     this.mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) this.chunks.push(e.data); };
     this.mediaRecorder.onstop = () => this.finish();
-
-    this.musicStopPromise = new Promise((resolve) => {
-      this.musicRecorder = new MediaRecorder(musicDest.stream, opts);
-      this.musicRecorder.ondataavailable = (e) => { if (e.data && e.data.size) this.musicChunks.push(e.data); };
-      this.musicRecorder.onstop = () => {
-        try { Audio_.master.disconnect(musicDest); } catch (e) {}
-        musicDest.stream.getTracks().forEach((track) => track.stop());
-        resolve(new Blob(this.musicChunks, { type: this.musicRecorder.mimeType || "audio/webm" }));
-      };
-      this.musicRecorder.start(200);
-    });
     this.mediaRecorder.start(200);
 
     State.recording = true;
@@ -1895,14 +1914,25 @@ const Recorder = {
 
     // مزامنة كل الأزرار (الشريط الجانبي + الزر العائم)
     document.getElementById("recBtn").classList.add("recording");
-    document.getElementById("recBtnText").textContent = "\\u0625\\u064a\\u0642\\u0627\\u0641 \\u0627\\u0644\\u062a\\u0633\\u062c\\u064a\\u0644";
+    document.getElementById("recBtnText").textContent = "إيقاف التسجيل";
     const fab = document.getElementById("recFab");
-    fab.classList.add("recording");
-    document.getElementById("recFabText").textContent = "\\u0625\\u064a\\u0642\\u0627\\u0641 \\u0627\\u0644\\u062a\\u0633\\u062c\\u064a\\u0644";
+    const fabVoice = document.getElementById("recFabVoice");
+    const active = this.mode === "voice" ? fabVoice : fab;
+    const idle = this.mode === "voice" ? fab : fabVoice;
+    active.classList.add("recording");
+    idle.classList.add("dim");
+    document.getElementById("recFabText").textContent = this.mode === "voice" ? "أضف صوتك" : "أوقف التسجيل";
+    document.getElementById("recFabVoiceText").textContent = this.mode === "voice" ? "أوقف التسجيل" : "صوتك فقط";
     document.getElementById("recDockInfo").hidden = false;
+    document.getElementById("recDockHint").textContent =
+      this.mode === "voice"
+        ? "يُسجَّل صوتك فقط — الموسيقى تُسمع من الموقع"
+        : "يُسجَّل صوتك مع نغمات الموقع";
     document.getElementById("recVignette").classList.add("on");
     document.getElementById("liveDot").classList.add("on");
-    setStatus("جارٍ التسجيل… عزّف فوق النغمة!");
+    setStatus(this.mode === "voice"
+      ? "جارٍ تسجيل صوتك فقط — عزّف فوق موسيقى الموقع"
+      : "جارٍ التسجيل… عزّف فوق النغمة!");
   },
 
   // مؤشّر مستوى الصوت (يعمل مع حلقة الرسم)
@@ -1937,18 +1967,23 @@ const Recorder = {
   stop() {
     if (!this.mediaRecorder || this.mediaRecorder.state === "inactive") return;
     this.mediaRecorder.stop();
-    if (this.musicRecorder && this.musicRecorder.state !== "inactive") this.musicRecorder.stop();
     if (this.timerId) { clearInterval(this.timerId); this.timerId = null; }
     if (this.levelRaf) { cancelAnimationFrame(this.levelRaf); this.levelRaf = null; }
+    if (this.musicToRec) { try { this.musicToRec.disconnect(); } catch (e) {} }
     if (this.micAnalyser) { try { this.micAnalyser.disconnect(); } catch (e) {} this.micAnalyser = null; }
     if (this.micStream) { this.micStream.getTracks().forEach((t) => t.stop()); this.micStream = null; }
     State.recording = false;
 
     document.getElementById("recBtn").classList.remove("recording");
-    document.getElementById("recBtnText").textContent = "\\u0628\\u062f\\u0621 \\u062a\\u0633\\u062c\\u064a\\u0644 \\u0627\\u0644\\u0635\\u0648\\u062a \\u0641\\u0642\\u0637";
+    document.getElementById("recBtnText").textContent = "بدء التسجيل";
     const fab = document.getElementById("recFab");
+    const fabVoice = document.getElementById("recFabVoice");
     fab.classList.remove("recording");
-    document.getElementById("recFabText").textContent = "\\u0633\\u062c\\u0651\\u0644 \\u0635\\u0648\\u062a\\u0643";
+    fabVoice.classList.remove("recording");
+    fab.classList.remove("dim");
+    fabVoice.classList.remove("dim");
+    document.getElementById("recFabText").textContent = "أضف صوتك";
+    document.getElementById("recFabVoiceText").textContent = "صوتك فقط";
     document.getElementById("recDockInfo").hidden = true;
     document.getElementById("recVignette").classList.remove("on");
     const bar = document.getElementById("recLevel");
@@ -1956,18 +1991,9 @@ const Recorder = {
     document.getElementById("liveDot").classList.toggle("on", State.loopPlaying);
   },
 
-  async finish() {
-    const voiceType = this.mediaRecorder.mimeType || "audio/webm";
-    const voiceBlob = new Blob(this.chunks, { type: voiceType });
-    let blob = voiceBlob;
-    try {
-      const musicBlob = await this.musicStopPromise;
-      if (musicBlob && musicBlob.size) blob = await this.mixTracks(voiceBlob, musicBlob);
-    } catch (err) {
-      console.warn("Could not mix accompaniment; keeping the vocal recording", err);
-      toast("!", "????? ??? ????????? ?? ???????? ?????? ?????", false);
-    }
-    const type = blob.type || voiceType;
+  finish() {
+    const type = this.mediaRecorder.mimeType || "audio/webm";
+    const blob = new Blob(this.chunks, { type });
     if (this.lastUrl) URL.revokeObjectURL(this.lastUrl);
     this.lastBlob = blob;
     this.lastUrl = URL.createObjectURL(blob);
@@ -1981,71 +2007,26 @@ const Recorder = {
     // حجم الملف الخفيف + اسم الملف
     const kb = blob.size / 1024;
     const sizeTxt = kb < 1024 ? `${kb.toFixed(1)} KB` : `${(kb / 1024).toFixed(2)} MB`;
+    const kindTxt = this.mode === "voice" ? "صوتك فقط" : "صوتك + الموسيقى";
     const meta = document.getElementById("recMeta");
-    if (meta) meta.innerHTML = `📄 <b>${sizeTxt}</b> · ${type.includes("opus") ? "Opus" : "WebM"}`;
+    if (meta) meta.innerHTML = `📄 <b>${sizeTxt}</b> · ${kindTxt} · ${type.includes("opus") ? "Opus" : "WebM"}`;
     this.lastName = this.makeName();
 
     // حفظ تلقائي على الجهاز
     const auto = document.getElementById("recAutoSave");
     if (auto && auto.checked) {
       this.download();
-      toast("✅", `تم حفظ المقطع تلقائياً (${sizeTxt})`, true);
+      toast("✅", `تم حفظ «${kindTxt}» تلقائياً (${sizeTxt})`, true);
     } else {
-      toast("✅", `اكتمل التسجيل — ${sizeTxt}`, true);
+      toast("✅", `اكتمل التسجيل — ${kindTxt} · ${sizeTxt}`, true);
     }
-    setStatus("اكتمل التسجيل — استمع أو حمّل المقطع");
-  },
-
-  async mixTracks(voiceBlob, musicBlob) {
-    const ctx = Audio_.ctx;
-    const decode = async (blob) => ctx.decodeAudioData(await blob.arrayBuffer());
-    const [voice, music] = await Promise.all([decode(voiceBlob), decode(musicBlob)]);
-    const sampleRate = ctx.sampleRate;
-    const frames = Math.max(voice.length, music.length);
-    const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-    const offline = new Offline(2, frames, sampleRate);
-    const voiceSource = offline.createBufferSource();
-    const voiceGain = offline.createGain();
-    voiceSource.buffer = voice;
-    voiceGain.gain.value = 0.82;
-    voiceSource.connect(voiceGain).connect(offline.destination);
-    const musicSource = offline.createBufferSource();
-    const musicGain = offline.createGain();
-    musicSource.buffer = music;
-    musicGain.gain.value = 0.58;
-    musicSource.connect(musicGain).connect(offline.destination);
-    voiceSource.start(0);
-    musicSource.start(0);
-    const rendered = await offline.startRendering();
-    return this.audioBufferToWav(rendered);
-  },
-
-  audioBufferToWav(buffer) {
-    const channels = Math.min(2, buffer.numberOfChannels);
-    const frames = buffer.length;
-    const dataSize = frames * channels * 2;
-    const out = new ArrayBuffer(44 + dataSize);
-    const view = new DataView(out);
-    const write = (offset, value) => { for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i)); };
-    write(0, "RIFF"); view.setUint32(4, 36 + dataSize, true); write(8, "WAVE");
-    write(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
-    view.setUint16(22, channels, true); view.setUint32(24, buffer.sampleRate, true);
-    view.setUint32(28, buffer.sampleRate * channels * 2, true); view.setUint16(32, channels * 2, true);
-    view.setUint16(34, 16, true); write(36, "data"); view.setUint32(40, dataSize, true);
-    let offset = 44;
-    for (let i = 0; i < frames; i++) {
-      for (let ch = 0; ch < channels; ch++) {
-        const sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
-        view.setInt16(offset, sample < 0 ? sample * 32768 : sample * 32767, true);
-        offset += 2;
-      }
-    }
-    return new Blob([out], { type: "audio/wav" });
+    setStatus(`اكتمل التسجيل (${kindTxt}) — استمع أو حمّل المقطع`);
   },
 
   makeName() {
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-    return `hidden-frequency-${stamp}.wav`;
+    const kind = this.mode === "voice" ? "voice-only" : "voice-music";
+    return `hidden-frequency-${kind}-${stamp}.webm`;
   },
 
   download() {
@@ -2059,19 +2040,35 @@ const Recorder = {
   },
 };
 
-document.getElementById("recFab").title = "\u0633\u062c\u0651\u0644 \u0635\u0648\u062a\u0643 \u0648\u062d\u062f\u0647\u060c \u0648\u0627\u0644\u0645\u0648\u0642\u0639 \u064a\u0636\u064a\u0641 \u0645\u0648\u0633\u064a\u0642\u0627\u0647 \u0625\u0644\u0649 \u0627\u0644\u0645\u0644\u0641";
-document.getElementById("recFabText").textContent = "\u0633\u062c\u0651\u0644 \u0635\u0648\u062a\u0643";
-document.getElementById("recExplanation").textContent = "\u0633\u062c\u0651\u0644 \u0635\u0648\u062a\u0643 \u0648\u062d\u062f\u0647\u061b \u0627\u0644\u0645\u0648\u0642\u0639 \u064a\u0648\u0644\u0651\u062f \u0627\u0644\u0645\u0648\u0633\u064a\u0642\u0649 \u0641\u064a \u0645\u0633\u0627\u0631 \u0645\u0646\u0641\u0635\u0644 \u062b\u0645 \u064a\u0645\u0632\u062c\u0647\u0627 \u0645\u0639 \u0635\u0648\u062a\u0643 \u0641\u064a \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0646\u0647\u0627\u0626\u064a.";
-
-document.getElementById("recBtnText").textContent = "\u0628\u062f\u0621 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u0635\u0648\u062a \u0641\u0642\u0637";
 const recBtn = document.getElementById("recBtn");
 recBtn.addEventListener("click", () => {
-  State.recording ? Recorder.stop() : Recorder.start();
+  if (State.recording) { Recorder.stop(); return; }
+  Recorder.mode = State.recMode;
+  Recorder.start();
 });
 
-// الزر العائم على المسرح
+// الزر العائم الأول: صوتك + موسيقى الموقع
 document.getElementById("recFab").addEventListener("click", () => {
-  State.recording ? Recorder.stop() : Recorder.start();
+  if (State.recording) { Recorder.stop(); return; }
+  Recorder.mode = "mix";
+  State.recMode = "mix";
+  document.getElementById("recMode").value = "mix";
+  Recorder.start();
+});
+
+// الزر العائم الثاني: صوتك فقط (الموسيقى من الموقع تُسمع ولا تُسجَّل)
+document.getElementById("recFabVoice").addEventListener("click", () => {
+  if (State.recording) { Recorder.stop(); return; }
+  Recorder.mode = "voice";
+  State.recMode = "voice";
+  document.getElementById("recMode").value = "voice";
+  Recorder.start();
+});
+
+// قائمة اختيار المحتوى في الشريط الجانبية
+document.getElementById("recMode").addEventListener("change", (e) => {
+  State.recMode = e.target.value;
+  Recorder.mode = e.target.value;
 });
 
 // إشعار سريع
