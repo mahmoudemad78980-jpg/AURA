@@ -461,6 +461,21 @@ audio{
 }
 .file-meta b{color:var(--accent-2);font-weight:700}
 
+/* شريط تقدّم المزج */
+.mix-progress{
+  display:flex;flex-direction:column;gap:6px;margin-block-start:10px;
+  font-size:11px;color:var(--txt-dim);
+}
+.mix-progress-bar{
+  height:5px;border-radius:5px;overflow:hidden;
+  background:rgba(255,255,255,.12);
+}
+.mix-progress-bar i{
+  display:block;height:100%;width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  transition:width .12s linear;
+}
+
 /* لوحة المفاتيح */
 .piano{
   flex:none;height:190px;
@@ -766,19 +781,36 @@ body.drawer-open .scrim{opacity:1;pointer-events:auto}
         <div id="recOut" hidden style="margin-top:12px">
           <div class="file-meta" id="recMeta">—</div>
           <audio id="recPlayer" controls></audio>
+          <div class="field" id="mixLevelField" hidden>
+            <label for="mixLevel">مستوى الموسيقى عند المزج <b id="mixLevelVal">75%</b></label>
+            <input type="range" id="mixLevel" min="0" max="100" value="75" />
+          </div>
+          <div class="btn-row" style="margin-bottom:8px">
+            <button class="btn primary" id="mixDownloadBtn" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+              </svg>
+              تحميل مع الموسيقى
+            </button>
+          </div>
           <div class="btn-row">
             <button class="btn" id="downloadBtn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3v12M7 11l5 5 5-5M5 21h14"/>
               </svg>
-              تحميل المقطع
+              <span id="downloadBtnText">تحميل المقطع</span>
             </button>
             <button class="btn" id="discardBtn">حذف</button>
+          </div>
+          <div class="mix-progress" id="mixProgress" hidden>
+            <div class="mix-progress-bar"><i id="mixProgressBar"></i></div>
+            <span id="mixProgressText">جارٍ إضافة الموسيقى…</span>
           </div>
         </div>
         <div class="note" style="margin-top:11px">
           في وضع <b>«صوتك + موسيقى التطبيق»</b> يُدمج صوتك مع النغمات واللوب في مقطع واحد.
-          وفي وضع <b>«صوتك فقط»</b> يُسجَّل صوتك وحده — بينما تبقى موسيقى الموقع تُسمع في أذنك لتعبز فوقها، فلا تدخل الملف.
+          وفي وضع <b>«صوتك فقط»</b> يُسجَّل صوتك وحده — تبقى موسيقى الموقع تُسمع في أذنك لتعبز فوقها، فلا تدخل الملف.
+          ثم عند الحفظ يضيف التطبيق موسيقى الموقع فوق صوتك تلقائياً، أو يمكنك تحميل الصوت الخام وحده من زر «صوتك فقط».
         </div>
       </section>
 
@@ -928,6 +960,7 @@ const Audio_ = {
   wet: null,
   loopBus: null,
   recDest: null,
+  recDestMusic: null,
   data: null,
   active: 0,
 
@@ -973,6 +1006,8 @@ const Audio_ = {
     // وجهة تسجيل MediaStream (تستقبل الصوت + الميكروفون)
     if (ctx.createMediaStreamDestination) {
       this.recDest = ctx.createMediaStreamDestination();
+      // وجهة منفصلة للموسيقى فقط — تُستخدم لدمج الموسيقى مع الصوت عند التصدير
+      this.recDestMusic = ctx.createMediaStreamDestination();
     }
 
     // محلل طيفي بصري
@@ -1893,6 +1928,14 @@ const Recorder = {
       this.musicToRec = musicToRec;
     } else {
       this.musicToRec = null;
+      // في وضع «صوتك فقط»: نسجّل الموسيقى في مسار منفصل لنمزجها مع صوتك عند التصدير
+      if (Audio_.recDestMusic) {
+        const musicTrack = ctx.createGain();
+        musicTrack.gain.value = 1;
+        Audio_.master.connect(musicTrack);
+        musicTrack.connect(Audio_.recDestMusic);
+        this.musicToRec = musicTrack;
+      }
     }
 
     const opts = { mimeType: "audio/webm;codecs=opus", audioBitsPerSecond: this.bitrate() };
@@ -1906,6 +1949,22 @@ const Recorder = {
     this.mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) this.chunks.push(e.data); };
     this.mediaRecorder.onstop = () => this.finish();
     this.mediaRecorder.start(200);
+
+    // المسار الموازي للموسيقى (لوضع «صوتك فقط») — يُمزج مع الصوت عند التصدير
+    this.musicChunks = [];
+    this.musicRecorder = null;
+    if (this.mode === "voice" && Audio_.recDestMusic) {
+      const mOpts = { mimeType: opts.mimeType, audioBitsPerSecond: this.bitrate() };
+      if (mOpts.mimeType && !MediaRecorder.isTypeSupported(mOpts.mimeType)) mOpts.mimeType = "";
+      try {
+        this.musicRecorder = new MediaRecorder(Audio_.recDestMusic.stream, mOpts);
+        this.musicRecorder.ondataavailable = (e) => { if (e.data && e.data.size) this.musicChunks.push(e.data); };
+        this.musicRecorder.onstop = () => {
+          this.musicBlob = new Blob(this.musicChunks, { type: this.musicRecorder.mimeType || "audio/webm" });
+        };
+        this.musicRecorder.start(200);
+      } catch (e) { this.musicRecorder = null; }
+    }
 
     State.recording = true;
     this.startTime = Date.now();
@@ -1967,6 +2026,7 @@ const Recorder = {
   stop() {
     if (!this.mediaRecorder || this.mediaRecorder.state === "inactive") return;
     this.mediaRecorder.stop();
+    if (this.musicRecorder && this.musicRecorder.state !== "inactive") this.musicRecorder.stop();
     if (this.timerId) { clearInterval(this.timerId); this.timerId = null; }
     if (this.levelRaf) { cancelAnimationFrame(this.levelRaf); this.levelRaf = null; }
     if (this.musicToRec) { try { this.musicToRec.disconnect(); } catch (e) {} }
@@ -1996,6 +2056,7 @@ const Recorder = {
     const blob = new Blob(this.chunks, { type });
     if (this.lastUrl) URL.revokeObjectURL(this.lastUrl);
     this.lastBlob = blob;
+    this.voiceBlob = blob;   // في وضع «صوتك فقط» هذا هو الصوت النظيف
     this.lastUrl = URL.createObjectURL(blob);
 
     const player = document.getElementById("recPlayer");
@@ -2004,7 +2065,7 @@ const Recorder = {
     document.getElementById("recTimer").textContent = "00:00";
     document.getElementById("recTimer").classList.remove("on");
 
-    // حجم الملف الخفيف + اسم الملف
+    // حجم الملف الخفيف + نوع المحتوى
     const kb = blob.size / 1024;
     const sizeTxt = kb < 1024 ? `${kb.toFixed(1)} KB` : `${(kb / 1024).toFixed(2)} MB`;
     const kindTxt = this.mode === "voice" ? "صوتك فقط" : "صوتك + الموسيقى";
@@ -2012,11 +2073,24 @@ const Recorder = {
     if (meta) meta.innerHTML = `📄 <b>${sizeTxt}</b> · ${kindTxt} · ${type.includes("opus") ? "Opus" : "WebM"}`;
     this.lastName = this.makeName();
 
+    // واجهة التصدير: في وضع «صوتك فقط» يظهر زر المزج مع الموسيقى
+    const mixBtn = document.getElementById("mixDownloadBtn");
+    const mixField = document.getElementById("mixLevelField");
+    const isVoice = this.mode === "voice";
+    mixBtn.hidden = !isVoice;
+    mixField.hidden = !isVoice;
+    document.getElementById("downloadBtnText").textContent = isVoice ? "صوتك فقط" : "تحميل المقطع";
+
     // حفظ تلقائي على الجهاز
     const auto = document.getElementById("recAutoSave");
     if (auto && auto.checked) {
-      this.download();
-      toast("✅", `تم حفظ «${kindTxt}» تلقائياً (${sizeTxt})`, true);
+      if (isVoice) {
+        // في وضع الصوت فقط: نضيف الموسيقى فوق الصوت ثم نحفظ الملف النهائي
+        this.downloadFinal(true);
+      } else {
+        this.download();
+        toast("✅", `تم حفظ المقطع تلقائياً (${sizeTxt})`, true);
+      }
     } else {
       toast("✅", `اكتمل التسجيل — ${kindTxt} · ${sizeTxt}`, true);
     }
@@ -2027,6 +2101,109 @@ const Recorder = {
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
     const kind = this.mode === "voice" ? "voice-only" : "voice-music";
     return `hidden-frequency-${kind}-${stamp}.webm`;
+  },
+
+  // ===== دمج الموسيقى فوق الصوت قبل التحميل =====
+  // يُعاد بناء المقطع في الوقت الحقيقي: يُشغَّل الصوت والموسيقى معاً
+  // في مسار خاص (لا يُسمع من السماعات) ويُسجَّل الناتج في ملف واحد خفيف.
+  async mixWithMusic(onProgress) {
+    if (!this.voiceBlob) return null;
+    const ctx = Audio_.ctx || Audio_.init();
+    if (!ctx) return null;
+    const decode = async (blob) => {
+      try {
+        const ab = await blob.arrayBuffer();
+        return await ctx.decodeAudioData(ab);
+      } catch (e) { return null; }
+    };
+    const vBuf = await decode(this.voiceBlob);
+    if (!vBuf) return null;
+    const mBuf = this.musicBlob ? await decode(this.musicBlob) : null;
+    const dur = Math.max(vBuf.duration, mBuf ? mBuf.duration : 0);
+    if (!dur) return null;
+
+    const dest = ctx.createMediaStreamDestination();
+    const gV = ctx.createGain();
+    gV.gain.value = 1.0;                       // صوتك في المقدمة
+    const gM = ctx.createGain();
+    gM.gain.value = this.mixLevel();           // الموسيقى خلفه
+    const srcV = ctx.createBufferSource();
+    srcV.buffer = vBuf;
+    srcV.connect(gV); gV.connect(dest);
+    srcV.start(0);
+    if (mBuf) {
+      const srcM = ctx.createBufferSource();
+      srcM.buffer = mBuf;
+      srcM.connect(gM); gM.connect(dest);
+      srcM.start(0);
+    }
+
+    const opts = { mimeType: "audio/webm;codecs=opus", audioBitsPerSecond: this.bitrate() };
+    if (!MediaRecorder.isTypeSupported(opts.mimeType)) opts.mimeType = "audio/webm";
+    const rec = new MediaRecorder(dest.stream, opts);
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise((res) => { rec.onstop = res; });
+    rec.start(200);
+
+    const t0 = performance.now();
+    await new Promise((res) => {
+      const iv = setInterval(() => {
+        const p = Math.min(1, (performance.now() - t0) / (dur * 1000));
+        if (onProgress) onProgress(p);
+        if (p >= 1) { clearInterval(iv); res(); }
+      }, 90);
+    });
+    rec.stop();
+    await stopped;
+    return new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+  },
+
+  mixLevel() {
+    const el = document.getElementById("mixLevel");
+    return el ? Number(el.value) / 100 : 0.75;
+  },
+
+  // تحميل الملف النهائي (مع الموسيقى أو بدونها)
+  async downloadFinal(withMusic) {
+    if (!this.lastUrl) return;
+    if (!withMusic) { this.download(); return; }
+
+    const prog = document.getElementById("mixProgress");
+    const bar = document.getElementById("mixProgressBar");
+    const txt = document.getElementById("mixProgressText");
+    prog.hidden = false;
+    document.getElementById("mixDownloadBtn").disabled = true;
+    document.getElementById("downloadBtn").disabled = true;
+
+    try {
+      const mixed = await this.mixWithMusic((p) => {
+        if (bar) bar.style.width = Math.round(p * 100) + "%";
+        if (txt) txt.textContent = `جارٍ إضافة الموسيقى فوق صوتك… ${Math.round(p * 100)}%`;
+      });
+      if (mixed && mixed.size) {
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+        const url = URL.createObjectURL(mixed);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `hidden-frequency-voice+music-${stamp}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        toast("🎵", `تم إنشاء المقطع بصوتك + الموسيقى (${(mixed.size / 1024).toFixed(1)} KB)`, true);
+      } else {
+        toast("⚠️", "تعذّر المزج — حُمّل الملف الخام بدلاً منه", false);
+      }
+    } catch (err) {
+      console.warn("mix failed", err);
+      toast("⚠️", "تعذّر المزج — حُمّل الملف الخام بدلاً منه", false);
+    } finally {
+      prog.hidden = true;
+      if (bar) bar.style.width = "0%";
+      document.getElementById("mixDownloadBtn").disabled = false;
+      document.getElementById("downloadBtn").disabled = false;
+    }
   },
 
   download() {
@@ -2086,14 +2263,23 @@ function toast(icon, msg, ok = true) {
   el._t = setTimeout(() => el.classList.remove("show"), 3200);
 }
 
-document.getElementById("downloadBtn").addEventListener("click", () => Recorder.download());
+document.getElementById("downloadBtn").addEventListener("click", () => Recorder.downloadFinal(false));
+document.getElementById("mixDownloadBtn").addEventListener("click", () => Recorder.downloadFinal(true));
+
+// مستوى الموسيقى عند المزج
+bindRange("mixLevel", { outId: "mixLevelVal", fn: (v) => v + "%" }, () => {});
 
 document.getElementById("discardBtn").addEventListener("click", () => {
   const player = document.getElementById("recPlayer");
   player.pause(); player.removeAttribute("src"); player.load();
   document.getElementById("recOut").hidden = true;
+  document.getElementById("mixDownloadBtn").hidden = true;
+  document.getElementById("mixLevelField").hidden = true;
+  document.getElementById("mixProgress").hidden = true;
   if (Recorder.lastUrl) { URL.revokeObjectURL(Recorder.lastUrl); Recorder.lastUrl = null; }
   Recorder.lastBlob = null;
+  Recorder.voiceBlob = null;
+  Recorder.musicBlob = null;
   setStatus("تم حذف المقطع المسجّل");
 });
 
