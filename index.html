@@ -331,9 +331,49 @@ audio{
 .statusbar .sb-end{margin-inline-start:auto}
 
 /* ============================================================
-   7. لوحة المفاتيح المرئية + بطاقات النغمات
+   7. بطاقات اختيار الموسيقى + نتيجة المواءمة
    ============================================================ */
-.stage-wrap{display:flex;flex-direction:column}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.preset{
+  position:relative;cursor:pointer;text-align:center;
+  padding:10px 5px 9px;border-radius:var(--radius-sm);
+  background:rgba(255,255,255,.04);border:1px solid var(--line);
+  color:var(--txt-dim);display:flex;flex-direction:column;align-items:center;gap:2px;
+  transition:all .16s;
+}
+.preset .p-ico{font-size:17px;line-height:1.1}
+.preset b{font-size:11.5px;font-weight:700;color:var(--txt)}
+.preset small{font-size:9px;color:var(--txt-mute);font-weight:500}
+.preset:hover{border-color:var(--line-strong);background:rgba(255,255,255,.075)}
+.preset.active{
+  background:linear-gradient(135deg,rgba(124,92,255,.32),rgba(86,214,255,.18));
+  border-color:var(--accent);color:#fff;
+  box-shadow:0 0 0 1px rgba(124,92,255,.35),0 8px 22px rgba(124,92,255,.24);
+}
+.preset.active b{color:#fff}
+.preset.active small{color:var(--accent-2)}
+
+/* صندوق نتيجة المواءمة */
+.fit-box{
+  margin-block:10px;padding:11px 12px;border-radius:var(--radius-sm);
+  background:linear-gradient(135deg,rgba(61,220,151,.12),rgba(86,214,255,.08));
+  border:1px solid rgba(61,220,151,.3);
+}
+.fit-head{
+  font-size:11.5px;font-weight:700;color:var(--ok);margin-block-end:7px;
+  display:flex;align-items:center;gap:6px;
+}
+.fit-rows{display:flex;flex-direction:column;gap:5px}
+.fit-row{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  font-size:11px;color:var(--txt-dim);
+}
+.fit-row b{color:var(--txt);font-weight:700;font-size:11.5px}
+.fit-row b.hi{color:var(--accent-2)}
+
+/* ============================================================
+   8. لوحة المفاتيح المرئية + بطاقات النغمات
+   ============================================================ */
 .stage-wrap{display:flex;flex-direction:column}
 .canvas-area{position:relative;flex:1;min-height:0;overflow:hidden}
 
@@ -545,7 +585,7 @@ audio{
 .pkey.on::before{background:#fff;box-shadow:0 0 16px rgba(255,255,255,.8)}
 
 /* ============================================================
-   8. الاستجابة للشاشات الصغيرة
+   9. الاستجابة للشاشات الصغيرة
    ============================================================ */
 .scrim{
   position:absolute;inset:0;background:rgba(3,5,12,.68);z-index:25;
@@ -653,6 +693,110 @@ body.drawer-open .scrim{opacity:1;pointer-events:auto}
         <span>Control Room</span>
       </div>
 
+      <!-- ---- اختيار الموسيقى ---- -->
+      <section class="group">
+        <div class="group-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+          </svg>
+          ① اختَر الموسيقى
+        </div>
+        <div class="presets" id="presets">
+          <button class="preset active" data-preset="ambient"><span class="p-ico">🌙</span><b>تأملي هادئ</b><small>هضاب ناعمة · 76 BPM</small></button>
+          <button class="preset" data-preset="pop"><span class="p-ico">✨</span><b>بيت شعبي</b><small>إيقاع حيّ · 104 BPM</small></button>
+          <button class="preset" data-preset="trap"><span class="p-ico">💥</span><b>تراب 808</b><small>قوي عميق · 140 BPM</small></button>
+          <button class="preset" data-preset="oud"><span class="p-ico">🪕</span><b>عود شرقي</b><small>أرابيانك · 96 BPM</small></button>
+          <button class="preset" data-preset="lofi"><span class="p-ico">🌊</span><b>لوفي هادئ</b><small>مكسور حالم · 84 BPM</small></button>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label for="bpm">سرعة الموسيقى (BPM) <b id="bpmVal">76</b></label>
+          <input type="range" id="bpm" min="50" max="180" value="76" />
+        </div>
+        <div class="field">
+          <label for="loopVol">مستوى الموسيقى <b id="loopVolVal">35%</b></label>
+          <input type="range" id="loopVol" min="0" max="100" value="35" />
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="loopBtn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <span id="loopBtnText">تشغيل الموسيقى</span>
+          </button>
+        </div>
+        <div class="note" style="margin-top:10px">
+          اختر المقطوعة أولاً، ثم سجّل صوتك — وسيضبط التطبيق <b>الإيقاع والمقام</b> تلقائياً على صوتك عند الدمج.
+        </div>
+      </section>
+
+      <!-- ---- التسجيل ---- -->
+      <section class="group">
+        <div class="group-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>
+          </svg>
+          ② سجّل صوتك
+        </div>
+        <div class="timer" id="recTimer">00:00</div>
+        <button class="btn rec" id="recBtn">
+          <span class="rec-dot"></span>
+          <span id="recBtnText">تسجيل صوتك فقط</span>
+        </button>
+        <div class="field" style="margin-top:12px">
+          <label for="recMode">محتوى التسجيل</label>
+          <select id="recMode">
+            <option value="voice">صوتك فقط (تُضبط الموسيقى عليه بعد الحفظ)</option>
+            <option value="mix">صوتك + موسيقى التطبيق</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="recQuality">حجم الملف</label>
+          <select id="recQuality">
+            <option value="48000">خفيف (48 kbps) — الأصغر حجماً</option>
+            <option value="96000">متوازن (96 kbps)</option>
+            <option value="128000">عالي الجودة (128 kbps)</option>
+          </select>
+        </div>
+        <label class="check">
+          <input type="checkbox" id="recAutoSave" checked />
+          <span>حفظ الملف تلقائياً على الجهاز بعد الإيقاف</span>
+        </label>
+        <div id="recOut" hidden style="margin-top:12px">
+          <div class="file-meta" id="recMeta">—</div>
+          <audio id="recPlayer" controls></audio>
+          <!-- نتيجة المواءمة التلقائية -->
+          <div class="fit-box" id="fitBox" hidden>
+            <div class="fit-head">🎯 ضُبطت الموسيقى على صوتك</div>
+            <div class="fit-rows" id="fitRows"></div>
+          </div>
+          <div class="field" id="mixLevelField" hidden>
+            <label for="mixLevel">مستوى الموسيقى عند المزج <b id="mixLevelVal">75%</b></label>
+            <input type="range" id="mixLevel" min="0" max="100" value="75" />
+          </div>
+          <div class="btn-row" style="margin-bottom:8px">
+            <button class="btn primary" id="mixDownloadBtn" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+              </svg>
+              تحميل مع الموسيقى
+            </button>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="downloadBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12M7 11l5 5 5-5M5 21h14"/>
+              </svg>
+              <span id="downloadBtnText">تحميل المقطع</span>
+            </button>
+            <button class="btn" id="discardBtn">حذف</button>
+          </div>
+          <div class="mix-progress" id="mixProgress" hidden>
+            <div class="mix-progress-bar"><i id="mixProgressBar"></i></div>
+            <span id="mixProgressText">جارٍ إضافة الموسيقى…</span>
+          </div>
+        </div>
+        <div class="note" style="margin-top:11px">
+          يُسجَّل صوتك وحده، ثم يقرأ التطبيق <b>إيقاعك ومقامك</b> من تسجيلك ويبني الموسيقى المختارة لتوافقهما تماماً.
+        </div>
+      </section>
       <!-- ---- الصوت ---- -->
       <section class="group">
         <div class="group-title">
@@ -678,7 +822,6 @@ body.drawer-open .scrim{opacity:1;pointer-events:auto}
           <input type="range" id="echo" min="0" max="80" value="28" />
         </div>
       </section>
-
       <!-- ---- السلم ---- -->
       <section class="group">
         <div class="group-title">
@@ -712,7 +855,6 @@ body.drawer-open .scrim{opacity:1;pointer-events:auto}
           كل نغمة تُولَّد تلقائياً من السلّم المختار — مما يضمن التناغم مهما تفوّقت في العزف.
         </div>
       </section>
-
       <!-- ---- اللوب ---- -->
       <section class="group">
         <div class="group-title">
@@ -727,92 +869,10 @@ body.drawer-open .scrim{opacity:1;pointer-events:auto}
             <span id="loopBtnText">تشغيل اللوب</span>
           </button>
         </div>
-        <div class="field">
-          <label for="bpm">سرعة اللوب (BPM) <b id="bpmVal">92</b></label>
-          <input type="range" id="bpm" min="60" max="180" value="92" />
-        </div>
-        <div class="field">
-          <label for="loopVol">مستوى اللوب <b id="loopVolVal">35%</b></label>
-          <input type="range" id="loopVol" min="0" max="100" value="35" />
-        </div>
-        <div class="field">
-          <label for="loopPattern">نمط الإيقاع</label>
-          <select id="loopPattern">
-            <option value="ambient">تأملي هادئ (Ambient)</option>
-            <option value="pulse">نبضي (Pulse)</option>
-            <option value="wave">متموّج (Wave)</option>
-            <option value="heartbeat">نبضات (Heartbeat)</option>
-          </select>
-        </div>
       </section>
 
-      <!-- ---- التسجيل ---- -->
-      <section class="group">
-        <div class="group-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>
-          </svg>
-          استوديو التسجيل
-        </div>
-        <div class="timer" id="recTimer">00:00</div>
-        <button class="btn rec" id="recBtn">
-          <span class="rec-dot"></span>
-          <span id="recBtnText">بدء التسجيل</span>
-        </button>
-        <div class="field" style="margin-top:12px">
-          <label for="recMode">محتوى التسجيل</label>
-          <select id="recMode">
-            <option value="mix">صوتك + موسيقى التطبيق</option>
-            <option value="voice">صوتك فقط (الموسيقى تُسمع ولا تُسجَّل)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="recQuality">حجم الملف</label>
-          <select id="recQuality">
-            <option value="48000">خفيف (48 kbps) — الأصغر حجماً</option>
-            <option value="96000">متوازن (96 kbps)</option>
-            <option value="128000">عالي الجودة (128 kbps)</option>
-          </select>
-        </div>
-        <label class="check">
-          <input type="checkbox" id="recAutoSave" checked />
-          <span>حفظ الملف تلقائياً على الجهاز بعد الإيقاف</span>
-        </label>
-        <div id="recOut" hidden style="margin-top:12px">
-          <div class="file-meta" id="recMeta">—</div>
-          <audio id="recPlayer" controls></audio>
-          <div class="field" id="mixLevelField" hidden>
-            <label for="mixLevel">مستوى الموسيقى عند المزج <b id="mixLevelVal">75%</b></label>
-            <input type="range" id="mixLevel" min="0" max="100" value="75" />
-          </div>
-          <div class="btn-row" style="margin-bottom:8px">
-            <button class="btn primary" id="mixDownloadBtn" hidden>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-              </svg>
-              تحميل مع الموسيقى
-            </button>
-          </div>
-          <div class="btn-row">
-            <button class="btn" id="downloadBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3v12M7 11l5 5 5-5M5 21h14"/>
-              </svg>
-              <span id="downloadBtnText">تحميل المقطع</span>
-            </button>
-            <button class="btn" id="discardBtn">حذف</button>
-          </div>
-          <div class="mix-progress" id="mixProgress" hidden>
-            <div class="mix-progress-bar"><i id="mixProgressBar"></i></div>
-            <span id="mixProgressText">جارٍ إضافة الموسيقى…</span>
-          </div>
-        </div>
-        <div class="note" style="margin-top:11px">
-          في وضع <b>«صوتك + موسيقى التطبيق»</b> يُدمج صوتك مع النغمات واللوب في مقطع واحد.
-          وفي وضع <b>«صوتك فقط»</b> يُسجَّل صوتك وحده — تبقى موسيقى الموقع تُسمع في أذنك لتعبز فوقها، فلا تدخل الملف.
-          ثم عند الحفظ يضيف التطبيق موسيقى الموقع فوق صوتك تلقائياً، أو يمكنك تحميل الصوت الخام وحده من زر «صوتك فقط».
-        </div>
-      </section>
+
+
 
       <!-- ---- اختصارات ---- -->
       <section class="group">
@@ -929,9 +989,10 @@ const State = {
   bpm: 92,
   loopVol: 0.35,
   pattern: "ambient",
+  loopFilter: 1500,
   loopPlaying: false,
   recording: false,
-  recMode: "mix",
+  recMode: "voice",
   currentNote: null,
   currentFreq: null,
   installed: false,
@@ -1074,7 +1135,7 @@ const Audio_ = {
   },
 
   // ضربة إيقاعية (Hi-hat) من ضوضاء
-  hat(when = 0, gain = 0.12) {
+  hat(when = 0, gain = 0.12, bus = null) {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const t0 = ctx.currentTime + when;
@@ -1089,12 +1150,12 @@ const Audio_ = {
     hp.frequency.value = 6500;
     const g = ctx.createGain();
     g.gain.value = gain;
-    src.connect(hp); hp.connect(g); g.connect(this.loopBus);
+    src.connect(hp); hp.connect(g); g.connect(bus || this.loopBus);
     src.start(t0);
   },
 
   // نبضة منخفضة (Kick / Pulse)
-  kick(when = 0, gain = 0.3, freq = 78) {
+  kick(when = 0, gain = 0.3, freq = 78, bus = null) {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const t0 = ctx.currentTime + when;
@@ -1106,7 +1167,7 @@ const Audio_ = {
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(gain, t0 + 0.006);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
-    osc.connect(g); g.connect(this.loopBus);
+    osc.connect(g); g.connect(bus || this.loopBus);
     osc.start(t0); osc.stop(t0 + 0.4);
   },
 };
@@ -1750,12 +1811,55 @@ bindRange("loopVol", { outId: "loopVolVal", fn: (v) => v + "%" }, (v) => {
   State.loopVol = v / 100;
   if (Audio_.loopBus) Audio_.loopBus.gain.setTargetAtTime(State.loopVol, Audio_.ctx.currentTime, 0.03);
 });
+// نمط الإيقاع صار يُختار ضمن المقاطع الموسيقية (MUSIC_PRESETS)
 const loopPattern = document.getElementById("loopPattern");
-loopPattern.addEventListener("change", () => { State.pattern = loopPattern.value; });
+if (loopPattern) loopPattern.addEventListener("change", () => { State.pattern = loopPattern.value; });
 
 /* ============================================================
-   القسم 8 — مشغّل اللوب الخلفي
+   القسم 8 — مشغّل الموسيقى الخلفية (Loop)
    ============================================================ */
+
+/* ===== مقطوعات الموسيقى المختارة ===== */
+const MUSIC_PRESETS = {
+  ambient: { name: "تأملي هادئ",  pattern: "ambient",   bpm: 76,  wave: "triangle", filter: 1500, echo: 0.45, bass: 0.24, drums: false },
+  pop:     { name: "بيت شعبي",   pattern: "pulse",     bpm: 104, wave: "sawtooth", filter: 2400, echo: 0.20, bass: 0.30, drums: true  },
+  trap:    { name: "تراب 808",   pattern: "pulse",     bpm: 140, wave: "square",   filter: 1500, echo: 0.14, bass: 0.36, drums: true  },
+  oud:     { name: "عود شرقي",   pattern: "wave",      bpm: 96,  wave: "sine",     filter: 2000, echo: 0.38, bass: 0.28, drums: true  },
+  lofi:    { name: "لوفي هادئ",  pattern: "heartbeat", bpm: 84,  wave: "triangle", filter: 1150, echo: 0.28, bass: 0.30, drums: true  },
+};
+let currentPreset = "ambient";
+
+// تطبيق المقطوعة المختارة: نمط الإيقاع + السرعة +音色 + الصدى
+function applyPreset(id, silent) {
+  const pr = MUSIC_PRESETS[id];
+  if (!pr) return;
+  currentPreset = id;
+  State.pattern = pr.pattern;
+  State.bpm = pr.bpm;
+  State.wave = pr.wave;
+  State.echo = pr.echo;
+  State.loopFilter = pr.filter;
+
+  // تحديث عناصر الواجهة
+  const bpmEl = document.getElementById("bpm");
+  if (bpmEl) { bpmEl.value = String(pr.bpm); bpmEl.dispatchEvent(new Event("input")); }
+  const echoEl = document.getElementById("echo");
+  if (echoEl) { echoEl.value = String(Math.round(pr.echo * 100)); echoEl.dispatchEvent(new Event("input")); }
+  document.querySelectorAll("#waveSeg button").forEach((b) =>
+    b.classList.toggle("active", b.dataset.wave === pr.wave));
+  document.querySelectorAll(".preset").forEach((b) =>
+    b.classList.toggle("active", b.dataset.preset === id));
+
+  if (!silent) {
+    setStatus(`تم اختيار: ${pr.name}`);
+    toast("🎵", `الموسيقى: ${pr.name} · ${pr.bpm} BPM`, true);
+  }
+}
+
+document.querySelectorAll(".preset").forEach((b) => {
+  b.addEventListener("click", () => applyPreset(b.dataset.preset));
+});
+
 const Loop = {
   timer: null,
   nextTime: 0,
@@ -1770,7 +1874,7 @@ const Loop = {
     this.timer = setInterval(() => this.schedule(), 25);
     State.loopPlaying = true;
     const btn = document.getElementById("loopBtn");
-    document.getElementById("loopBtnText").textContent = "إيقاف اللوب";
+    document.getElementById("loopBtnText").textContent = "إيقاف الموسيقى";
     btn.classList.remove("primary");
     btn.style.background = "linear-gradient(135deg,#ff3d64,#c81e50)";
     document.getElementById("liveDot").classList.add("on");
@@ -1784,7 +1888,7 @@ const Loop = {
     this.stopTimer();
     State.loopPlaying = false;
     const btn = document.getElementById("loopBtn");
-    document.getElementById("loopBtnText").textContent = "تشغيل اللوب";
+    document.getElementById("loopBtnText").textContent = "تشغيل الموسيقى";
     btn.classList.add("primary");
     btn.style.background = "";
     document.getElementById("liveDot").classList.remove("on");
@@ -1806,11 +1910,13 @@ const Loop = {
     }
   },
 
-  playStep(step, when) {
+  playStep(step, when, dest, visual = true) {
+    const bus = dest || Audio_.loopBus;
     const s = step % 16;
     const bar = Math.floor(step / 16);
     const pattern = State.pattern;
     const steps = SCALES[State.scale].steps.length;
+    const pr = MUSIC_PRESETS[currentPreset] || MUSIC_PRESETS.ambient;
 
     // نغمة باص متدرجة من السلّم
     const degSeq = pattern === "heartbeat"
@@ -1826,33 +1932,37 @@ const Loop = {
     // الباص
     if (pattern === "heartbeat") {
       if (s === 0 || s === 3 || s === 8 || s === 11) {
-        Audio_.tone(freq / 2, { wave: "sine", dur: 0.5, gain: 0.30, when, toBus: Audio_.loopBus, filter: 900 });
+        Audio_.tone(freq / 2, { wave: pr.wave, dur: 0.5, gain: pr.bass, when, toBus: bus, filter: pr.filter });
       }
     } else if (pattern === "ambient") {
       if (s === 0 || s === 8) {
-        Audio_.tone(freq / 2, { wave: "triangle", dur: 2.2, gain: 0.26, when, toBus: Audio_.loopBus, filter: 800 });
+        Audio_.tone(freq / 2, { wave: pr.wave, dur: 2.2, gain: pr.bass, when, toBus: bus, filter: pr.filter });
+        // هضبة ثالثة تعطي عمقاً
+        Audio_.tone(freq / 4, { wave: "sine", dur: 2.4, gain: pr.bass * 0.55, when, toBus: bus, filter: pr.filter * 0.6 });
       }
     } else {
       if (s % 4 === 0) {
-        Audio_.tone(freq / 2, { wave: "sine", dur: 0.6, gain: 0.30, when, toBus: Audio_.loopBus, filter: 1100 });
+        Audio_.tone(freq / 2, { wave: pr.wave, dur: 0.6, gain: pr.bass, when, toBus: bus, filter: pr.filter });
       }
     }
 
     // إيقاع
-    if (pattern === "pulse") {
-      if (s % 4 === 0) Audio_.kick(when, 0.34, 82);
-      if (s % 4 === 2) Audio_.hat(when, 0.10);
+    if (!pr.drums) {
+      if (s === 0 || s === 6) Audio_.hat(when, 0.045, bus);
+    } else if (pattern === "pulse") {
+      if (s % 4 === 0) Audio_.kick(when, 0.34, 82, bus);
+      if (s % 4 === 2) Audio_.hat(when, 0.10, bus);
     } else if (pattern === "heartbeat") {
-      if (s === 0 || s === 3 || s === 8 || s === 11) Audio_.kick(when, 0.22, 62);
+      if (s === 0 || s === 3 || s === 8 || s === 11) Audio_.kick(when, 0.22, 62, bus);
     } else if (pattern === "wave") {
-      if (s % 8 === 0) Audio_.kick(when, 0.26, 74);
-      if (s % 4 === 2) Audio_.hat(when, 0.055);
+      if (s % 8 === 0) Audio_.kick(when, 0.26, 74, bus);
+      if (s % 4 === 2) Audio_.hat(when, 0.055, bus);
     } else {
-      if (s === 0 || s === 6) Audio_.hat(when, 0.045);
+      if (s === 0 || s === 6) Audio_.hat(when, 0.045, bus);
     }
 
     // توهج بصري مع الإيقاع
-    if (s % 4 === 0) {
+    if (visual && s % 4 === 0) {
       const r = canvas.getBoundingClientRect();
       spawnRipple(r.width * 0.5, r.height * 0.5, freq, 0.45);
     }
@@ -1862,7 +1972,170 @@ const Loop = {
 document.getElementById("loopBtn").addEventListener("click", () => Loop.toggle());
 
 /* ============================================================
-   القسم 9 — استوديو التسجيل (Voice + Music)
+   القسم 9 — تحليل صوتك ومواءمة الموسيقى عليه
+   ============================================================ */
+
+/* استخراج الطبقة الصوتية (f0) بالارتباط الذاتي */
+function detectPitch(data, sr) {
+  const minLag = Math.max(2, Math.floor(sr / 800));   // حتى 800 هرتز
+  const maxLag = Math.min(Math.floor(sr / 65), data.length - 1);
+  if (maxLag <= minLag) return 0;
+  const corr = (lag) => {
+    let s = 0, e1 = 0, e2 = 0;
+    for (let i = 0; i < data.length - lag; i++) {
+      s += data[i] * data[i + lag];
+      e1 += data[i] * data[i];
+      e2 += data[i + lag] * data[i + lag];
+    }
+    return s / Math.sqrt(e1 * e2 + 1e-12);
+  };
+  let bestLag = -1, best = 0;
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    const c = corr(lag);
+    if (c > best) { best = c; bestLag = lag; }
+  }
+  if (bestLag < 0) return 0;
+  // تصحيح الأوكتاف: إن كان نصف التأخير يعطي ارتباطاً قوياً فالطبقة أعلى
+  const halfLag = Math.round(bestLag / 2);
+  if (halfLag >= minLag && corr(halfLag) > best * 0.85) bestLag = halfLag;
+  return sr / bestLag;
+}
+
+/* الطبقة الصوتية = الوسيط عبر عدة نوافذ (أثبت من نافذة واحدة) */
+function detectPitchStable(ch, sr) {
+  const nWin = 4096;
+  if (ch.length < nWin + 64) return detectPitch(ch, sr);
+  const count = Math.min(9, Math.floor((ch.length - nWin) / 2048) + 1);
+  const ps = [];
+  for (let k = 0; k < count; k++) {
+    const start = Math.floor((k * (ch.length - nWin)) / Math.max(1, count - 1));
+    const p = detectPitch(ch.subarray(start, start + nWin), sr);
+    if (p > 60 && p < 900) ps.push(p);
+  }
+  if (!ps.length) return 0;
+  ps.sort((a, b) => a - b);
+  return ps[Math.floor(ps.length / 2)];
+}
+
+/* تحليل التسجيل: الإيقاع + المقام */
+async function analyzeVoice(blob) {
+  const ctx = Audio_.ctx || Audio_.init();
+  if (!ctx) return null;
+  let buf;
+  try { buf = await ctx.decodeAudioData(await blob.arrayBuffer()); } catch (e) { return null; }
+  if (!buf || !buf.length) return null;
+
+  const ch = buf.getChannelData(0);
+  const sr = buf.sampleRate;
+
+  // ---- (أ) الإيقاع: تخطيط الذروة ثم ارتباط ذاتي ----
+  const hop = 512, win = 1024;
+  const env = [];
+  for (let i = 0; i + win <= ch.length; i += hop) {
+    let s = 0;
+    for (let j = 0; j < win; j++) s += ch[i + j] * ch[i + j];
+    env.push(Math.sqrt(s / win));
+  }
+  const fps = sr / hop;
+  const envScore = (bpm) => {
+    const lag = Math.max(1, Math.round((60 / bpm) * fps));
+    let sc = 0, n = 0;
+    for (let i = 0; i + lag < env.length; i++) { sc += env[i] * env[i + lag]; n++; }
+    if (!n) return 0;
+    sc /= n;
+    const prior = 1 - Math.min(0.7, Math.abs(bpm - 100) / 200); // تفضيل الإيقاعات المعتادة
+    return sc * prior;
+  };
+  let bestBpm = 100, bestScore = -Infinity;
+  for (let bpm = 50; bpm <= 170; bpm++) {
+    const score = envScore(bpm);
+    if (score > bestScore) { bestScore = score; bestBpm = bpm; }
+  }
+  // تصحيح التوافقي: إن كانت الضعفة أقوى من السرعة المكتشفة، فالإيقاع مضاعف
+  const half = bestBpm * 2;
+  if (half <= 170 && envScore(half) > bestScore * 0.72) bestBpm = half;
+
+  // ---- (ب) المقام: الطبقة الصوتية في أقوى مقطع ----
+  let bestStart = 0, bestRms = -1;
+  const nWin = 4096;
+  for (let i = 0; i + nWin <= ch.length; i += 1024) {
+    let s = 0;
+    for (let j = 0; j < nWin; j++) s += ch[i + j] * ch[i + j];
+    const r = Math.sqrt(s / nWin);
+    if (r > bestRms) { bestRms = r; bestStart = i; }
+  }
+  const seg = ch.subarray(bestStart, Math.min(ch.length, bestStart + nWin));
+  const f0 = detectPitchStable(ch, sr) || detectPitch(seg, sr);
+
+  // الجذر = الطبقة التي غنّا عليها المستخدم (تصبح نواة الموسيقى)
+  let root = State.root, note = "—";
+  if (f0 > 50) {
+    const pc = ((Math.round(12 * Math.log2(f0 / 261.63)) % 12) + 12) % 12;
+    let base = 261.63 * Math.pow(2, pc / 12);
+    while (base > 240) base /= 2;      // ننزل بأوكتاف كامل عند الحاجة
+    while (base < 115) base *= 2;
+    root = Math.round(base * 100) / 100;
+    note = Scale.nameOf(f0);
+  }
+  return { bpm: bestBpm, root, note, f0, duration: buf.duration };
+}
+
+/* بناء الموسيقى المختارة على إيقاع ومقام الصوت (تعمل في الوقت الحقيقي) */
+function renderAccompaniment(dest, duration, bpm, root) {
+  const ctx = Audio_.ctx;
+  if (!ctx) return;
+  const pr = MUSIC_PRESETS[currentPreset] || MUSIC_PRESETS.ambient;
+  const oldBpm = State.bpm, oldRoot = State.root, oldPattern = State.pattern, oldFilter = State.loopFilter;
+  State.bpm = bpm;
+  State.root = root;
+  State.pattern = pr.pattern;
+  State.loopFilter = pr.filter;
+
+  const stepDur = (60 / bpm) / 4;
+  const t0 = ctx.currentTime + 0.06;
+  let step = 0;
+  while (t0 + step * stepDur < ctx.currentTime + duration) {
+    Loop.playStep(step, t0 + step * stepDur - ctx.currentTime, dest, false);
+    step++;
+  }
+  State.bpm = oldBpm; State.root = oldRoot; State.pattern = oldPattern; State.loopFilter = oldFilter;
+}
+
+/* عرض نتيجة المواءمة */
+function showFit(fit) {
+  const box = document.getElementById("fitBox");
+  const rows = document.getElementById("fitRows");
+  if (!box || !rows) return;
+  const pr = MUSIC_PRESETS[currentPreset] || MUSIC_PRESETS.ambient;
+  rows.innerHTML =
+    `<div class="fit-row"><span>الإيقاع</span><b class="hi">${fit.bpm} BPM</b></div>` +
+    `<div class="fit-row"><span>المقام</span><b class="hi">${fit.note}</b></div>` +
+    `<div class="fit-row"><span>الموسيقى</span><b>${pr.name}</b></div>`;
+  box.hidden = false;
+}
+
+/* تطبيق الإيقاع والمقام المضبوطين على اللوب الحيّ أيضاً */
+function applyFitToLive(fit) {
+  State.bpm = fit.bpm;
+  State.root = fit.root;
+  const bpmEl = document.getElementById("bpm");
+  if (bpmEl) { bpmEl.value = String(fit.bpm); bpmEl.dispatchEvent(new Event("input")); }
+  // إضافة/تحديث خيار الجذر في القائمة
+  const rootSel = document.getElementById("rootSel");
+  if (rootSel) {
+    let opt = [...rootSel.options].find((o) => Math.abs(Number(o.value) - fit.root) < 0.5);
+    if (!opt) {
+      opt = document.createElement("option");
+      opt.value = fit.root.toFixed(2);
+      rootSel.appendChild(opt);
+    }
+    opt.textContent = `${Scale.nameOf(fit.root)} (مضبوط على صوتك)`;
+    rootSel.value = opt.value;
+  }
+}
+
+/* ============================================================
+   القسم 10 — استوديو التسجيل (Voice + Music)
    ============================================================ */
 const Recorder = {
   mediaRecorder: null,
@@ -1878,7 +2151,8 @@ const Recorder = {
   lastBlob: null,
   lastUrl: null,
   lastName: "",
-  mode: "mix",   // "mix" = صوتك + الموسيقى · "voice" = صوتك فقط
+  fit: null,
+  mode: "voice",   // "mix" = صوتك + الموسيقى · "voice" = صوتك فقط
 
   //-bitrate حسب اختيار المستخدم (خفيف افتراضياً)
   bitrate() {
@@ -2035,7 +2309,7 @@ const Recorder = {
     State.recording = false;
 
     document.getElementById("recBtn").classList.remove("recording");
-    document.getElementById("recBtnText").textContent = "بدء التسجيل";
+    document.getElementById("recBtnText").textContent = "تسجيل صوتك فقط";
     const fab = document.getElementById("recFab");
     const fabVoice = document.getElementById("recFabVoice");
     fab.classList.remove("recording");
@@ -2051,7 +2325,7 @@ const Recorder = {
     document.getElementById("liveDot").classList.toggle("on", State.loopPlaying);
   },
 
-  finish() {
+  async finish() {
     const type = this.mediaRecorder.mimeType || "audio/webm";
     const blob = new Blob(this.chunks, { type });
     if (this.lastUrl) URL.revokeObjectURL(this.lastUrl);
@@ -2081,11 +2355,22 @@ const Recorder = {
     mixField.hidden = !isVoice;
     document.getElementById("downloadBtnText").textContent = isVoice ? "صوتك فقط" : "تحميل المقطع";
 
+    // ===== مواءمة الموسيقى على صوتك =====
+    let fit = null;
+    if (isVoice) {
+      fit = await analyzeVoice(this.voiceBlob);
+      if (fit) {
+        this.fit = fit;
+        showFit(fit);
+        applyFitToLive(fit);       // اللوب الحيّ يتبع إيقاعك ومقامك أيضاً
+      }
+    }
+
     // حفظ تلقائي على الجهاز
     const auto = document.getElementById("recAutoSave");
     if (auto && auto.checked) {
       if (isVoice) {
-        // في وضع الصوت فقط: نضيف الموسيقى فوق الصوت ثم نحفظ الملف النهائي
+        // في وضع الصوت فقط: تُضاف الموسيقى فوق الصوت ثم يُحفظ الملف النهائي
         this.downloadFinal(true);
       } else {
         this.download();
@@ -2094,7 +2379,8 @@ const Recorder = {
     } else {
       toast("✅", `اكتمل التسجيل — ${kindTxt} · ${sizeTxt}`, true);
     }
-    setStatus(`اكتمل التسجيل (${kindTxt}) — استمع أو حمّل المقطع`);
+    if (fit) setStatus(`ضُبطت الموسيقى على صوتك: ${fit.bpm} BPM · ${fit.note}`);
+    else setStatus(`اكتمل التسجيل (${kindTxt}) — استمع أو حمّل المقطع`);
   },
 
   makeName() {
@@ -2104,9 +2390,9 @@ const Recorder = {
   },
 
   // ===== دمج الموسيقى فوق الصوت قبل التحميل =====
-  // يُعاد بناء المقطع في الوقت الحقيقي: يُشغَّل الصوت والموسيقى معاً
-  // في مسار خاص (لا يُسمع من السماعات) ويُسجَّل الناتج في ملف واحد خفيف.
-  async mixWithMusic(onProgress) {
+  // يُعاد بناء المقطع في الوقت الحقيقي: يُشغَّل الصوت، وتُولَّد الموسيقى
+  // على إيقاع صوتك ومقامه، ثم يُسجَّل الناتج في ملف واحد خفيف.
+  async mixWithMusic(onProgress, fit) {
     if (!this.voiceBlob) return null;
     const ctx = Audio_.ctx || Audio_.init();
     if (!ctx) return null;
@@ -2118,8 +2404,7 @@ const Recorder = {
     };
     const vBuf = await decode(this.voiceBlob);
     if (!vBuf) return null;
-    const mBuf = this.musicBlob ? await decode(this.musicBlob) : null;
-    const dur = Math.max(vBuf.duration, mBuf ? mBuf.duration : 0);
+    const dur = vBuf.duration;
     if (!dur) return null;
 
     const dest = ctx.createMediaStreamDestination();
@@ -2131,12 +2416,14 @@ const Recorder = {
     srcV.buffer = vBuf;
     srcV.connect(gV); gV.connect(dest);
     srcV.start(0);
-    if (mBuf) {
-      const srcM = ctx.createBufferSource();
-      srcM.buffer = mBuf;
-      srcM.connect(gM); gM.connect(dest);
-      srcM.start(0);
-    }
+
+    // الموسيقى تُولَّد الآن على الإيقاع والمقام المضبوطين على صوتك
+    const f = fit || { bpm: State.bpm, root: State.root };
+    const musicBus = ctx.createGain();
+    musicBus.gain.value = 1;
+    musicBus.connect(gM);
+    gM.connect(dest);
+    renderAccompaniment(musicBus, dur, f.bpm, f.root);
 
     const opts = { mimeType: "audio/webm;codecs=opus", audioBitsPerSecond: this.bitrate() };
     if (!MediaRecorder.isTypeSupported(opts.mimeType)) opts.mimeType = "audio/webm";
@@ -2179,19 +2466,21 @@ const Recorder = {
     try {
       const mixed = await this.mixWithMusic((p) => {
         if (bar) bar.style.width = Math.round(p * 100) + "%";
-        if (txt) txt.textContent = `جارٍ إضافة الموسيقى فوق صوتك… ${Math.round(p * 100)}%`;
-      });
+        if (txt) txt.textContent = `جارٍ ضبط الموسيقى على صوتك… ${Math.round(p * 100)}%`;
+      }, this.fit);
       if (mixed && mixed.size) {
         const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+        const pr = MUSIC_PRESETS[currentPreset] || MUSIC_PRESETS.ambient;
         const url = URL.createObjectURL(mixed);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `hidden-frequency-voice+music-${stamp}.webm`;
+        a.download = `hidden-frequency-${currentPreset}-${stamp}.webm`;
         document.body.appendChild(a);
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 4000);
-        toast("🎵", `تم إنشاء المقطع بصوتك + الموسيقى (${(mixed.size / 1024).toFixed(1)} KB)`, true);
+        const fitTxt = this.fit ? ` على ${this.fit.bpm} BPM · ${this.fit.note}` : "";
+        toast("🎵", `تم إنشاء المقطع بصوتك + ${pr.name}${fitTxt} (${(mixed.size / 1024).toFixed(1)} KB)`, true);
       } else {
         toast("⚠️", "تعذّر المزج — حُمّل الملف الخام بدلاً منه", false);
       }
@@ -2280,6 +2569,8 @@ document.getElementById("discardBtn").addEventListener("click", () => {
   Recorder.lastBlob = null;
   Recorder.voiceBlob = null;
   Recorder.musicBlob = null;
+  Recorder.fit = null;
+  document.getElementById("fitBox").hidden = true;
   setStatus("تم حذف المقطع المسجّل");
 });
 
@@ -2404,8 +2695,9 @@ window.addEventListener("blur", () => {
 window.addEventListener("pointerdown", () => Audio_.resume(), { once: true });
 window.addEventListener("keydown", () => Audio_.resume(), { once: true });
 
-// بناء لوحة النغمات عند الإقلاع
+// بناء لوحة النغمات وتطبيق المقطوعة الموسيقية الافتراضية عند الإقلاع
 buildPiano();
+applyPreset("ambient", true);
 
 console.log("%cمسرح الترددات المخفية جاهز 🎭", "color:#8cf0ff;font-weight:bold");
 })();
