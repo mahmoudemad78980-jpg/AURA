@@ -958,6 +958,75 @@ html[data-theme="light"] .layer-row{background:rgba(20,28,60,.04)}
 }
 .calib-dot.on{background:var(--ok);box-shadow:0 0 10px var(--ok)}
 html[data-theme="light"] .calib-box{background:rgba(20,28,60,.04)}
+
+/* ============================================================
+   1و — تحدّي المفاتيح · الإدخال الصوتي
+   ============================================================ */
+.challenge-info{
+  display:flex;flex-wrap:wrap;gap:12px;margin-top:9px;
+  font-size:11px;color:var(--txt-mute);
+}
+.challenge-info b{color:var(--accent-2);font-size:13px}
+.challenge-hud{
+  position:absolute;inset-block-start:50%;inset-inline-start:50%;
+  transform:translate(50%,-50%);
+  z-index:22;display:none;flex-direction:column;align-items:center;gap:10px;
+  padding:22px 30px;border-radius:22px;text-align:center;
+  background:rgba(8,10,20,.72);border:1px solid var(--line-strong);
+  backdrop-filter:blur(12px);box-shadow:0 24px 70px rgba(0,0,0,.55);
+  min-width:min(78%,360px);
+}
+html[data-theme="light"] .challenge-hud{background:rgba(255,255,255,.9)}
+.challenge-hud.on{display:flex}
+.challenge-hud .ch-q{font-size:15px;color:var(--txt-dim);font-weight:600}
+.challenge-hud .ch-key{
+  font-size:clamp(46px,12vw,86px);font-weight:800;line-height:1;
+  background:linear-gradient(135deg,#fff,#9fd8ff 55%,#b8a4ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  letter-spacing:2px;
+}
+html[data-theme="light"] .challenge-hud .ch-key{
+  background:linear-gradient(135deg,#151b36,#2f6bd8 60%,#7c3aed);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.challenge-hud .ch-note{font-size:20px;font-weight:700;color:var(--accent-2)}
+.challenge-hud .ch-hint{font-size:11.5px;color:var(--txt-mute)}
+.challenge-hud.ok{animation:chOk .5s ease-out}
+.challenge-hud.bad{animation:chBad .4s ease-out}
+@keyframes chOk{0%{transform:translate(50%,-50%) scale(1)}40%{transform:translate(50%,-50%) scale(1.08);box-shadow:0 0 60px rgba(61,220,151,.55)}100%{transform:translate(50%,-50%) scale(1)}}
+@keyframes chBad{0%,100%{transform:translate(50%,-50%)}25%{transform:translate(52%,-50%)}75%{transform:translate(48%,-50%)}}
+
+/* الإدخال الصوتي */
+.voice-box{
+  margin-top:9px;padding:10px 12px;border-radius:12px;
+  background:rgba(255,255,255,.04);border:1px solid var(--line);
+}
+.voice-text{
+  font-size:12.5px;line-height:1.9;color:var(--txt);min-height:44px;
+  padding:6px 8px;border-radius:9px;background:rgba(0,0,0,.18);
+}
+.voice-text.interim{color:var(--txt-mute);font-style:italic}
+.voice-text .final{font-weight:700;color:var(--accent-2)}
+.voice-cmds{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.voice-cmd{
+  padding:5px 10px;border-radius:999px;cursor:pointer;font-size:11px;font-weight:600;
+  background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--txt-dim);
+}
+.voice-cmd:hover{background:rgba(124,92,255,.22);color:var(--txt);border-color:var(--accent)}
+.voice-cmd.hit{background:rgba(61,220,151,.22);border-color:var(--ok);color:var(--ok)}
+.voice-cmd .why{opacity:.6;font-weight:400;font-size:10px}
+html[data-theme="light"] .voice-box{background:rgba(20,28,60,.04)}
+html[data-theme="light"] .voice-text{background:rgba(20,28,60,.05)}
+
+/* إبراز الزر المطلوب في وضع التحدّي */
+.btn.ch-target{
+  animation:chTarget 1.1s ease-in-out infinite;
+  box-shadow:0 0 0 2px var(--accent-4), 0 0 22px rgba(255,209,102,.45);
+}
+@keyframes chTarget{
+  0%,100%{box-shadow:0 0 0 2px var(--accent-4), 0 0 18px rgba(255,209,102,.35)}
+  50%{box-shadow:0 0 0 4px var(--accent-4), 0 0 30px rgba(255,209,102,.7)}
+}
 </style>
 </head>
 <body>
@@ -1514,6 +1583,49 @@ html[data-theme="light"] .calib-box{background:rgba(20,28,60,.04)}
         </div>
       </section>
 
+      <!-- ---- تحدّي المفاتيح + الكلام ---- -->
+      <section class="group">
+        <div class="group-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l2.6 5.6L20 9.4l-4 4 1 5.6-5-2.6-5 2.6 1-5.6-4-4 5.4-.8z"/>
+          </svg>
+          تحدّي المفاتيح
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="challengeBtn">اتكى معايا</button>
+          <button class="btn" id="challengeStop" disabled>إيقاف</button>
+          <button class="btn" id="challengeQuiz">اسألني سؤال</button>
+        </div>
+        <div class="challenge-info" id="challengeInfo">
+          <span>النقاط: <b id="chScore">0</b></span>
+          <span>الدقة: <b id="chAcc">—</b></span>
+          <span>المتتالية: <b id="chStreak">0</b></span>
+        </div>
+        <div class="note" style="margin-top:8px">
+          «اتكى معايا» يطلب منك حرف معيّن تضغطه، و«اسألني سؤال» يسألك: أي حرف يعزف نغمة معيّنة؟ — وفي كل مرة تضغط صح تسمع نغمة حلوة وترفع نقاطك.
+        </div>
+      </section>
+
+      <section class="group">
+        <div class="group-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>
+          </svg>
+          اتكلّم مع التطبيق
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="voiceBtn">🎤 ابدأ الكلام</button>
+          <button class="btn" id="voiceStop" disabled>إيقاف</button>
+        </div>
+        <div class="voice-box" id="voiceBox">
+          <div class="voice-text" id="voiceText">اضغط «ابدأ الكلام» وتكلّم — هكتب لك هنا اللي بتقوله، ولو فيه أمر هنفّذوه.</div>
+          <div class="voice-cmds" id="voiceCmds"></div>
+        </div>
+        <div class="note" style="margin-top:8px">
+          الأوامر المتصورة تحت بتتغيّر حسب كلامك — اضغط أي واحدة أو اتكلّم بها.
+        </div>
+      </section>
+
       <!-- ---- طبقات ---- -->
       <section class="group">
         <div class="group-title">
@@ -1611,6 +1723,13 @@ html[data-theme="light"] .calib-box{background:rgba(20,28,60,.04)}
 
     <!-- عدّاد ما قبل التسجيل -->
     <div class="countdown" id="countdown"><span id="countdownNum">3</span></div>
+    <!-- لوحة التحدّي على المسرح -->
+    <div class="challenge-hud" id="challengeHud">
+      <div class="ch-q" id="chQ">اتك على زرار إيه؟</div>
+      <div class="ch-key" id="chKey">A</div>
+      <div class="ch-note" id="chNote"></div>
+      <div class="ch-hint" id="chHint"></div>
+    </div>
     <!-- زر الخروج من الوضع السينمائي -->
     <button class="cinema-exit" id="cinemaExit" title="العودة إلى الواجهة">✕ خروج</button>
 
@@ -1652,6 +1771,9 @@ html[data-theme="light"] .calib-box{background:rgba(20,28,60,.04)}
       <div class="help-item"><b>الصوت والآلات</b><span>«الآلة» تختار بيانو/عود/ناي/جيتار/أرغن/سينث لكل نغمة. «الموجة الصوتية» هي الموجة الخام. «مستوى الصوت» و«مقدار الصدى» يضبطان المزاج العام.</span></div>
       <div class="help-item"><b>السلّم الموسيقي</b><span>١١ سلماً (٥ غربية + ٦ مقامات عربية: راست، بايتي، صبا، نهوند، كرد، سيكاه). «النغمة الجذرية» هي أساس كل المقامات. اختر المقطوعة أولاً وستتغيّر المقام تلقائياً.</span></div>
       <div class="help-item"><b>العزف بالكيبورد</b><span>كل حرف من الـ26 يعزف نغمة من السلّم. الصف الوسطى هو السلّم الأساسي، والعلوي أوكتاف أعلى، والسفلي أخفض. مع <kbd>Shift</kbd> ترتفع النغمة.</span></div>
+      <div class="help-item"><b>تحدّي المفاتيح</b><span>«اتكى معايا» يعرض على المسرح سؤال «اتك على زرار إيه؟» ويطلب حرفاً معيّناً تضغطه — و«اسألني سؤال» يسألك: أي حرف في الكيبورد يعزف هذه النغمة؟ عند الإجابة الصحيحة تسمع تآلفاً حلواً وترفع نقاطك.</span></div>
+      <div class="help-item"><b>اتكلّم مع التطبيق</b><span>اضغط «ابدأ الكلام» وتكلّم: التطبيق يكتب كلامك في الشاشة ويقترح عليك الأوامر المناسبة (شغّل الموسيقى، سجّل، غيّر المقام…) — وينفّذها لوحده بمجرد ما تنطقها.</span></div>
+      <div class="help-item"><b>طبقات التسجيل (Overdub)</b><span>سجّل أكثر من طبقة (صوتك، عزف على الآلة، غناء) — ولكل طبقة مستوى خاص، وكلها تندمج في الملف النهائي.</span></div>
       <div class="help-item"><b>المسرح</b><span>اسحب بإصبعك أو الفأرة: المحور الأفقي يحدّد النغمة والسرعة تتحكم في الشدّة. على الموبايل كل إصبع يعزف نغمة مستقلة. اسحب على حافة القائمة الجانبية لتغيير عرضها، و«طيّ ▾» يخفي لوحة النغمات لتوسيع المسرح.</span></div>
     </div>
     <div class="help-keys">
@@ -5951,6 +6073,421 @@ function restoreFromHash() {
 window.addEventListener("hashchange", restoreFromHash);
 
 /* ============================================================
+   القسم 16 — الجولة الرابعة:
+   وضع التحدّي (اتك على زرار إيه؟) · الكلام مع التطبيق
+   ============================================================ */
+
+/* ---------- (أ) وضع التحدّي ---------- */
+const Challenge = {
+  on: false, mode: "key", target: "", answer: "", score: 0, total: 0, streak: 0, best: 0,
+  buttons: [
+    { id: "loopBtn", label: "تشغيل اللوب" },
+    { id: "metroBtn", label: "الميترونوم" },
+    { id: "recBtn", label: "زر التسجيل" },
+    { id: "genLyricsBtn", label: "ولّد كلمات" },
+    { id: "analyzeBtn", label: "حلّل نغمتي" },
+    { id: "cinemaBtn", label: "وضع سينمائي" },
+    { id: "liveLoopBtn", label: "سجّل حلقة" },
+    { id: "tapBtn", label: "اضغط للإيقاع" },
+    { id: "exportAnthemBtn", label: "صدّر الأنشودة" },
+    { id: "shareBtn", label: "شارك المقطع" },
+  ],
+
+  /* خريطة كل حرف -> نغمته وتردده */
+  letters() {
+    const map = {};
+    KB_ROWS.forEach((row) => row.keys.forEach(([letter, deg]) => {
+      const f = Scale.freqAt(deg);
+      map[letter] = { deg, freq: f, name: Scale.nameOf(f) };
+    }));
+    return map;
+  },
+
+  hud() {
+    const el = document.getElementById("challengeHud");
+    return {
+      hud: el,
+      q: document.getElementById("chQ"),
+      key: document.getElementById("chKey"),
+      note: document.getElementById("chNote"),
+      hint: document.getElementById("chHint"),
+    };
+  },
+
+  show() {
+    const h = this.hud();
+    if (!h.hud) return;
+    h.hud.classList.add("on");
+    h.hud.classList.remove("ok", "bad");
+  },
+  hide() {
+    const h = this.hud();
+    if (h.hud) h.hud.classList.remove("on");
+  },
+
+  /* جولة جديدة */
+  next(quiz) {
+    if (this._t) { clearTimeout(this._t); this._t = null; }
+    const h = this.hud();
+    const map = this.letters();
+    const letters = Object.keys(map);
+    const wantQuiz = quiz || this.forceQuiz;
+    this.forceQuiz = false;
+    const kind = wantQuiz ? "quiz" : (Math.random() < 0.72 ? "key" : "button");
+
+    // امسح إبراز الجولة السابقة
+    if (this.prevKey) { highlightPiano(this.prevKey, false); this.prevKey = null; }
+
+    if (kind === "key") {
+      const target = letters[Math.floor(Math.random() * letters.length)];
+      this.mode = "key";
+      this.target = target;
+      this.answer = target;
+      h.q.textContent = "اتك على زرار إيه؟";
+      h.key.textContent = target.toUpperCase();
+      h.note.textContent = map[target].name;
+      h.hint.textContent = "اضغط الحرف على الكيبورد (أو المفتاح في اللوحة)";
+      highlightPiano(target, true);
+      this.prevKey = target;
+    } else if (kind === "quiz") {
+      const target = letters[Math.floor(Math.random() * letters.length)];
+      this.mode = "quiz";
+      this.target = target;
+      this.answer = target;
+      h.q.textContent = "إيه في الكيبورد؟ أي حرف يعزف النغمة دي؟";
+      h.key.textContent = map[target].name;
+      h.note.textContent = `${map[target].freq.toFixed(1)} Hz`;
+      h.hint.textContent = "اضغط الحرف الصحيح على الكيبورد";
+    } else {
+      const b = this.buttons[Math.floor(Math.random() * this.buttons.length)];
+      this.mode = "button";
+      this.target = b.id;
+      this.answer = b.id;
+      h.q.textContent = "اتك على زرار إيه؟";
+      h.key.textContent = "👆";
+      h.note.textContent = "";
+      h.hint.textContent = "في زر في القائمة الجانبية — دوّر عليه واضغطه";
+      // نبرز الزر المطلوب
+      const el = document.getElementById(b.id);
+      el?.style.setProperty("--ch-target", "1");
+      el?.classList.add("ch-target");
+      this.prevBtn = b.id;
+    }
+    this.show();
+  },
+
+  /* ضغطة على حرف */
+  onKey(e) {
+    if (!this.on) return;
+    const letter = (e.key || "").toLowerCase();
+    if (!/^[a-z]$/.test(letter)) return;
+    if (this.mode === "button") return;
+    if (letter === this.answer) this.success();
+    else this.fail(letter.toUpperCase());
+  },
+
+  /* ضغطة على زر في الواجهة */
+  onButtonClick(e) {
+    if (!this.on || this.mode !== "button") return;
+    const t = e.target.closest("button");
+    if (!t) return;
+    if (["challengeBtn", "challengeStop", "challengeQuiz"].includes(t.id)) return;
+    if (t.id === this.answer) this.success();
+    else this.fail();
+  },
+
+  success() {
+    const h = this.hud();
+    this.score += 10 + this.streak * 2;
+    this.streak++;
+    this.hitsCount++;
+    this.total++;
+    this.best = Math.max(this.best, this.streak);
+    h.q.textContent = "برافو! 👏";
+    h.key.textContent = "✅";
+    h.note.textContent = "";
+    h.hint.textContent = `النقاط: ${this.score} · تتابع: ${this.streak}`;
+    h.hud.classList.remove("ok"); void h.hud.offsetWidth; h.hud.classList.add("ok");
+    this.prettyChord();
+    this.updateInfo();
+    this._t = setTimeout(() => { if (this.on) this.next(); }, 1400);
+  },
+
+  fail(wrongKey) {
+    const h = this.hud();
+    this.streak = 0;
+    this.misses = (this.misses || 0) + 1;
+    this.total++;
+    h.q.textContent = "مش هيّا… حاول تاني";
+    h.key.textContent = "❌";
+    h.hint.textContent = wrongKey ? `اللي اتك عليه «${wrongKey}» مش المطلوب — جرّب تاني` : "الزر ده مش المطلوب — دوّر على التاني";
+    h.hud.classList.remove("bad"); void h.hud.offsetWidth; h.hud.classList.add("bad");
+    // نغمة منخفضة لطيفة
+    Audio_.resume();
+    if (Audio_.ctx) {
+      const t = Audio_.ctx.currentTime + 0.02;
+      [196, 174.6].forEach((f, i) => {
+        const o = Audio_.ctx.createOscillator();
+        const g = Audio_.ctx.createGain();
+        o.type = "triangle"; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.12, t + 0.02 + i * 0.08);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        o.connect(g); g.connect(Audio_.master);
+        o.start(t); o.stop(t + 0.32);
+      });
+    }
+    this.updateInfo();
+    this._t = setTimeout(() => { if (this.on) this.next(); }, 1300);
+  },
+
+  /* نغمة حلوة عند النجاح: تآلف صغير */
+  prettyChord() {
+    Audio_.resume();
+    const ctx = Audio_.ctx;
+    if (!ctx) return;
+    const t0 = ctx.currentTime + 0.03;
+    const degs = [0, 2, 4, 7];
+    degs.forEach((d, i) => {
+      const f = Scale.freqAt(d + 7);
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      const flt = ctx.createBiquadFilter();
+      flt.type = "lowpass"; flt.frequency.value = 4200;
+      o.type = "triangle"; o.frequency.value = f;
+      const st = t0 + i * 0.085;
+      g.gain.setValueAtTime(0.0001, st);
+      g.gain.exponentialRampToValueAtTime(0.16, st + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, st + 0.6);
+      o.connect(flt); flt.connect(g); g.connect(Audio_.master);
+      o.start(st); o.stop(st + 0.65);
+    });
+  },
+
+  updateInfo() {
+    const s = document.getElementById("chScore");
+    const a = document.getElementById("chAcc");
+    const st = document.getElementById("chStreak");
+    if (s) s.textContent = String(this.score);
+    if (a) a.textContent = this.total ? Math.round((this.hitsCount / this.total) * 100) + "%" : "—";
+    if (st) st.textContent = String(this.streak);
+  },
+
+  start(quiz) {
+    if (this._t) { clearTimeout(this._t); this._t = null; }
+    this.on = true;
+    this.hitsCount = 0; this.misses = 0;
+    document.getElementById("challengeStop").disabled = false;
+    document.getElementById("challengeBtn").textContent = "جولة جديدة";
+    this.next(quiz);
+    setStatus("وضع التحدّي شغّال — اتك على اللي طلبته");
+  },
+  stop() {
+    this.on = false;
+    this.hide();
+    if (this.prevKey) highlightPiano(this.prevKey, false);
+    if (this.prevBtn) document.getElementById(this.prevBtn)?.classList.remove("ch-target");
+    document.getElementById("challengeStop").disabled = true;
+    document.getElementById("challengeBtn").textContent = "اتكى معايا";
+    setStatus("جاهز للعزف");
+  },
+};
+
+/* نقرات لوحة المفاتيح أثناء التحدّي */
+window.addEventListener("keydown", (e) => {
+  if (!Challenge.on) return;
+  if (document.activeElement && /input|textarea|select/i.test(document.activeElement.tagName)) return;
+  Challenge.onKey(e);
+});
+/* نقرات الأزرار في الواجهة (تحدّي الأزرار) */
+document.addEventListener("click", (e) => {
+  if (!Challenge.on || Challenge.mode !== "button") return;
+  Challenge.onButtonClick(e);
+});
+
+document.getElementById("challengeBtn")?.addEventListener("click", () => Challenge.start(false));
+document.getElementById("challengeQuiz")?.addEventListener("click", () => { Challenge.forceQuiz = true; Challenge.start(true); });
+document.getElementById("challengeStop")?.addEventListener("click", () => Challenge.stop());
+
+/* ---------- (ب) الكلام مع التطبيق ---------- */
+/* توحيد النص العربي: إزالة التشكيل وتوحيد الألف والياء والتاء المربوطة */
+function normalizeAr(s) {
+  return (s || "")
+    .toLowerCase()
+    .replace(/[ً-ْـ]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/[ً-ْ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const Voice = {
+  rec: null, running: false, finalText: "", history: [],
+
+  /* قاموس الأوامر: نطابق أي جزء من النص */
+  commands() {
+    return [
+      { id: "loop", label: "شغّل الموسيقى", words: ["شغل الموسيقى", "شغّل الموسيقى", "ابدأ الموسيقى", "شغل اللوب", "ابدأ اللوب"], run: () => { if (!State.loopPlaying) Loop.start(); else Loop.stop(); } },
+      { id: "stop", label: "أوقف الموسيقى", words: ["وقف الموسيقى", "أوقف الموسيقى", "أوقف اللوب", "اقفل الموسيقى"], run: () => Loop.stop() },
+      { id: "rec", label: "ابدأ التسجيل", words: ["ابدأ التسجيل", "سجل", "سجّل", "ابدأ التسجيل من فضلك", " recording"], run: () => { if (!State.recording) Recorder.start(); } },
+      { id: "recstop", label: "أوقف التسجيل", words: ["أوقف التسجيل", "وقف التسجيل", "أنهي التسجيل", "انه التسجيل", "خلاص سجّل"], run: () => { if (State.recording) Recorder.stop(); } },
+      { id: "metro", label: "الميترونوم", words: ["الميترونوم", "مترونوم"], run: () => Metro.toggle() },
+      { id: "cinema", label: "وضع سينمائي", words: ["وضع سينمائي", "الوضع السينمائي", "سينمائي"], run: () => setCinema(!document.documentElement.classList.contains("cinema")) },
+      { id: "export", label: "صدّر المقطع", words: ["صدر المقطع", "صدّر المقطع", "حمل المقطع", "حمّل المقطع", "تنزيل"], run: () => Recorder.downloadFinal(true) },
+      { id: "anthem", label: "صدّر الأنشودة", words: ["صدر الأنشودة", "صدّر الأنشودة", "أنشودة"], run: () => document.getElementById("exportAnthemBtn")?.click() },
+      { id: "lyrics", label: "ولّد كلمات", words: ["ولد كلمات", "ولّد كلمات", "اكتب كلمات", "كلمات جديدة"], run: () => document.getElementById("genLyricsBtn")?.click() },
+      { id: "analyze", label: "حلّل نغمتي", words: ["حلل نغمتي", "حلّل نغمتي", "حلل اللحن", "حلّل النغمة"], run: () => document.getElementById("analyzeBtn")?.click() },
+      { id: "looprec", label: "سجّل حلقة", words: ["سجل حلقة", "سجّل حلقة"], run: () => document.getElementById("liveLoopBtn")?.click() },
+      { id: "scale_bayati", label: "مقام بايتي", words: ["مقام بايتي", "بايتي"], run: () => setScaleByName("bayati") },
+      { id: "scale_rast", label: "مقام راست", words: ["مقام راست", "راست"], run: () => setScaleByName("rast") },
+      { id: "scale_hijaz", label: "مقام الحجاز", words: ["مقام الحجاز", "الحجاز"], run: () => setScaleByName("hijaz") },
+      { id: "scale_saba", label: "مقام صبا", words: ["مقام صبا", "صبا"], run: () => setScaleByName("saba") },
+      { id: "theme_light", label: "سمة فاتحة", words: ["سمة فاتحة", "الوضع الفاتح", "سمة نهار"], run: () => applyTheme("light") },
+      { id: "theme_purple", label: "سمة بنفسجية", words: ["سمة بنفسجية", "الوضع البنفسجي"], run: () => applyTheme("purple") },
+      { id: "theme_emerald", label: "سمة زمردية", words: ["سمة زمردية", "الوضع الأخضر", "سمة زمردي"], run: () => applyTheme("emerald") },
+      { id: "theme_dark", label: "سمة داكنة", words: ["سمة داكنة", "الوضع الداكن"], run: () => applyTheme("dark") },
+      { id: "share", label: "شارك المقطع", words: ["شارك المقطع", "مشاركة"], run: () => document.getElementById("shareBtn")?.click() },
+    ];
+  },
+
+  /* اقتراحات حيّة: أقرب الأوامر لكلامك */
+  suggest(text) {
+    const t = normalizeAr(text);
+    const all = this.commands();
+    const scored = all.map((c) => {
+      let best = 0;
+      c.words.forEach((w) => {
+        const ww = normalizeAr(w);
+        if (t.includes(ww)) best = Math.max(best, ww.length);
+      });
+      return { cmd: c, score: best };
+    }).filter((x) => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 4);
+    const box = document.getElementById("voiceCmds");
+    if (!box) return [];
+    box.innerHTML = "";
+    scored.forEach((s) => {
+      const b = document.createElement("button");
+      b.className = "voice-cmd";
+      b.dataset.cmd = s.cmd.id;
+      b.innerHTML = `${s.cmd.label}`;
+      b.addEventListener("click", () => { s.cmd.run(); this.markHit(s.cmd.id); });
+      box.appendChild(b);
+    });
+    return scored;
+  },
+
+  markHit(id) {
+    const b = document.querySelector(`.voice-cmd[data-cmd="${id}"]`);
+    if (b) { b.classList.add("hit"); setTimeout(() => b.classList.remove("hit"), 1400); }
+  },
+
+  /* تنفيذ الأوامر الواردة في النص */
+  exec(text) {
+    const t = normalizeAr(text);
+    const all = this.commands();
+    let hit = null;
+    for (const c of all) {
+      if (c.words.some((w) => t.includes(normalizeAr(w)))) { hit = c; break; }
+    }
+    if (hit) {
+      try { hit.run(); } catch (e) { console.warn(e); }
+      this.markHit(hit.id);
+      toast("🎙️", `اتك «${hit.label}» — اتنفّذ ✓`, true);
+      return hit;
+    }
+    return null;
+  },
+
+  supported() {
+    return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  },
+
+  start() {
+    if (!this.supported()) {
+      toast("⚠️", "متصفحك لا يدعم الإدخال الصوتي — جرّب Chrome", false);
+      return;
+    }
+    Audio_.resume();
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SR();
+    rec.lang = "ar-EG";
+    rec.continuous = true;
+    rec.interimResults = true;
+    this.rec = rec;
+    this.finalText = "";
+    const box = document.getElementById("voiceText");
+
+    rec.onresult = (e) => {
+      let interim = "";
+      let fin = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const txt = e.results[i][0].transcript;
+        if (e.results[i].isFinal) fin += txt + " ";
+        else interim += txt;
+      }
+      if (fin) {
+        this.finalText += fin;
+        if (box) {
+          box.classList.remove("interim");
+          box.innerHTML = `<span class="final">${this.finalText.trim()}</span>`;
+        }
+        this.suggest(this.finalText);
+        this.exec(fin);
+      } else if (interim && box) {
+        box.classList.add("interim");
+        box.innerHTML = `<span class="final">${this.finalText.trim()}</span> ${interim}`;
+        this.suggest(this.finalText + " " + interim);
+      }
+    };
+    rec.onerror = (e) => {
+      const msg = e.error === "not-allowed" ? "محتاج إذن الميكروفون" :
+        e.error === "no-speech" ? "ما سمعتوش — جرّب تاني" : "خطأ في التعرف: " + e.error;
+      toast("🎙️", msg, false);
+    };
+    rec.onend = () => {
+      if (this.running) { try { rec.start(); } catch (e) { /* تجاهل */ } }
+      else this.stopUI();
+    };
+    this.running = true;
+    rec.start();
+    document.getElementById("voiceBtn").textContent = "🎤 أستمع…";
+    document.getElementById("voiceStop").disabled = false;
+    if (box && !this.finalText) box.innerHTML = "بستمع… اتكلّم بحرية";
+    setStatus("التطبيق بيسمعك 🎙️");
+  },
+
+  stopUI() {
+    this.running = false;
+    document.getElementById("voiceBtn").textContent = "🎤 ابدأ الكلام";
+    document.getElementById("voiceStop").disabled = true;
+    setStatus("جاهز");
+  },
+
+  stop() {
+    this.running = false;
+    try { this.rec?.stop(); } catch (e) { /* تجاهل */ }
+    this.stopUI();
+  },
+};
+
+function setScaleByName(key) {
+  State.scale = key;
+  const sel = document.getElementById("scaleSel");
+  if (sel) sel.value = key;
+  buildPiano();
+  setStatus(`المقام: ${SCALES[key].name}`);
+}
+
+document.getElementById("voiceBtn")?.addEventListener("click", () => {
+  if (Voice.running) Voice.stop(); else Voice.start();
+});
+document.getElementById("voiceStop")?.addEventListener("click", () => Voice.stop());
+
+/* ============================================================
    القسم 12 — منع سلوك الصفحة المزعج + تنظيف
    ============================================================ */
 document.addEventListener("gesturestart", (e) => e.preventDefault());
@@ -5973,7 +6510,7 @@ applyPreset("ambient", true);
 restoreFromHash();
 
 // واجهة تصحيح/توسّع اختيارية (لا affect على عمل التطبيق)
-window.HFT = { State, SCALES, Scale, Audio_, Loop, Metro, Recorder, Lib, renderFx, bufferToMp3, bufferToWav, applyTheme, Wave, LiveLoop, Karaoke, INSTRUMENTS, Tap, extractMelody, detectPitch, downsample, Layers, Calib, projectSnapshot, applyProject };
+window.HFT = { State, SCALES, Scale, Audio_, Loop, Metro, Recorder, Lib, renderFx, bufferToMp3, bufferToWav, applyTheme, Wave, LiveLoop, Karaoke, INSTRUMENTS, Tap, extractMelody, detectPitch, downsample, Layers, Calib, projectSnapshot, applyProject, Challenge, Voice, normalizeAr };
 
 console.log("%cمسرح الترددات المخفية جاهز 🎭", "color:#8cf0ff;font-weight:bold");
 })();

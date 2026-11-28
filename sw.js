@@ -6,7 +6,7 @@
    ================================================================ */
 "use strict";
 
-const VERSION = "hft-v1.4.0";
+const VERSION = "hft-v1.5.0";
 const CACHE_NAME = `hft-cache-${VERSION}`;
 
 const PRECACHE_URLS = [
